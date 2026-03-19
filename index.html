@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>KC Market Intelligence — InSight Technologies</title>
+<title>PresageIQ — Towns &amp; Walley Intelligence</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -266,8 +266,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 <!-- TOPBAR -->
 <div class="topbar">
   <div>
-    <div class="logo">KC <span>Market</span> Intelligence</div>
-    <div class="logo-sub">InSight Technologies · v2.0</div>
+    <div class="logo">Presage<span>IQ</span></div>
+    <div class="logo-sub">Towns &amp; Walley Intelligence · v2.0</div>
   </div>
   <div class="topbar-right">
     <div class="tab-btn active" onclick="switchView('dashboard',this)">Dashboard</div>
@@ -635,7 +635,7 @@ function selectNeighborhood(id){
     <div class="chat-wrap">
       <div class="chat-header">
         <div class="status-dot"></div>
-        <div class="chat-header-label">InSight AI · ${n.name} Context Loaded</div>
+        <div class="chat-header-label">PresageIQ · ${n.name} Context Loaded</div>
       </div>
       <div class="chat-messages" id="chat-${id}">${chatHTML}</div>
       <div class="chat-input-row">
@@ -674,7 +674,7 @@ async function sendChat(id){
   messages.appendChild(typing);
   messages.scrollTop = messages.scrollHeight;
 
-  const systemPrompt = `You are InSight AI, a market intelligence analyst specializing in Kansas City neighborhood analysis. You have deep knowledge of the following neighborhood data:
+  const systemPrompt = `You are PresageIQ, an AI market intelligence analyst specializing in Kansas City neighborhood analysis. You have deep knowledge of the following neighborhood data:
 
 Neighborhood: ${n.name}
 Region: ${n.region} KC Metro
@@ -751,7 +751,7 @@ async function analyzeImport(){
   const nbhd = NEIGHBORHOODS.find(n=>n.id===nbhdId);
   const nbhdContext = nbhd ? `Target neighborhood: ${nbhd.name} (${nbhd.region} KC Metro, Score: ${nbhd.score}/100, Summary: ${nbhd.summary})` : 'No specific neighborhood targeted — identify the most likely neighborhood match.';
 
-  const systemPrompt = `You are InSight AI, analyzing community text for Kansas City market intelligence signals. 
+  const systemPrompt = `You are PresageIQ, analyzing community text for Kansas City market intelligence signals. 
 
 ${nbhdContext}
 Source type: ${source}
