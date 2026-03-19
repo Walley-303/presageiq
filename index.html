@@ -259,6 +259,51 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* API KEY MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-box{background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:28px;width:420px;max-width:90vw;}
+.modal-title{font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:6px;}
+.modal-desc{font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:16px;}
+.modal-input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:4px;font-family:var(--font-mono);font-size:12px;outline:none;margin-bottom:12px;transition:border .2s;}
+.modal-input:focus{border-color:var(--accent);}
+.modal-input::placeholder{color:var(--text3);}
+.modal-actions{display:flex;gap:8px;}
+.modal-save{background:var(--accent);border:none;color:#000;padding:9px 18px;border-radius:4px;font-family:var(--font-mono);font-size:11px;font-weight:500;cursor:pointer;transition:opacity .2s;}
+.modal-save:hover{opacity:.85;}
+.modal-skip{background:transparent;border:1px solid var(--border);color:var(--text3);padding:9px 14px;border-radius:4px;font-family:var(--font-mono);font-size:11px;cursor:pointer;transition:all .2s;}
+.modal-skip:hover{border-color:var(--border2);color:var(--text);}
+.api-status{display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer;padding:4px 8px;border:1px solid var(--border);border-radius:4px;transition:all .2s;}
+.api-status:hover{border-color:var(--border2);}
+.api-dot-active{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);}
+.api-dot-inactive{width:6px;height:6px;border-radius:50%;background:var(--danger);}
+
+/* REDDIT FEED */
+.reddit-feed{background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:20px;}
+.reddit-header{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg3);}
+.reddit-header-left{display:flex;align-items:center;gap:8px;}
+.reddit-title{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text2);}
+.reddit-sub-chips{display:flex;gap:4px;}
+.reddit-chip{font-size:9px;padding:2px 6px;border-radius:3px;cursor:pointer;border:1px solid var(--border);color:var(--text3);font-family:var(--font-mono);transition:all .2s;}
+.reddit-chip.active{border-color:rgba(255,69,0,.4);color:#ff4500;background:rgba(255,69,0,.08);}
+.reddit-refresh{background:transparent;border:1px solid var(--border);color:var(--text3);padding:3px 8px;border-radius:3px;font-family:var(--font-mono);font-size:9px;cursor:pointer;transition:all .2s;}
+.reddit-refresh:hover{border-color:var(--border2);color:var(--text);}
+.reddit-posts{max-height:220px;overflow-y:auto;padding:8px;}
+.reddit-post{padding:8px 10px;border-radius:4px;border:1px solid transparent;margin-bottom:4px;cursor:pointer;transition:all .2s;}
+.reddit-post:hover{background:var(--bg3);border-color:var(--border);}
+.reddit-post-title{font-size:11px;color:var(--text);margin-bottom:3px;line-height:1.4;}
+.reddit-post-meta{display:flex;gap:8px;font-size:9px;color:var(--text3);}
+.reddit-post-sub{color:#ff4500;}
+.reddit-loading{padding:20px;text-align:center;font-size:11px;color:var(--text3);}
+.reddit-import-btn{font-size:9px;padding:2px 6px;background:rgba(0,153,255,.1);border:1px solid rgba(0,153,255,.2);color:var(--accent2);border-radius:3px;cursor:pointer;margin-left:auto;font-family:var(--font-mono);white-space:nowrap;}
+
+/* DRAG DROP ZONE */
+.drop-zone{border:2px dashed var(--border);border-radius:6px;padding:20px;text-align:center;transition:all .3s;cursor:pointer;margin-bottom:12px;position:relative;}
+.drop-zone.dragover{border-color:var(--accent2);background:rgba(0,153,255,.05);}
+.drop-zone-icon{font-size:24px;margin-bottom:8px;opacity:.4;}
+.drop-zone-text{font-size:11px;color:var(--text3);margin-bottom:4px;}
+.drop-zone-sub{font-size:10px;color:var(--text3);opacity:.6;}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -272,11 +317,25 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   <div class="topbar-right">
     <div class="tab-btn active" onclick="switchView('dashboard',this)">Dashboard</div>
     <div class="tab-btn import-tab" onclick="switchView('import',this)">Import Signal</div>
-    <div style="display:flex;align-items:center;gap:6px;margin-left:8px;">
-      <div class="status-dot"></div>
-      <div class="status-label">Live · Claude API</div>
+    <div class="api-status" onclick="showApiModal()" id="api-status-btn" title="Click to configure API key">
+      <div class="api-dot-inactive" id="api-dot"></div>
+      <span id="api-status-label">API Key Required</span>
     </div>
     <button class="export-btn" onclick="alert('PDF export — Phase 3 feature')">Export Report</button>
+  </div>
+</div>
+
+<!-- API KEY MODAL -->
+<div class="modal-overlay" id="api-modal">
+  <div class="modal-box">
+    <div class="modal-title">Configure Anthropic API Key</div>
+    <div class="modal-desc">Your API key is stored only in your browser session — never sent anywhere except directly to Anthropic's API. Get your key at <span style="color:var(--accent)">console.anthropic.com</span>.</div>
+    <input class="modal-input" type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off"/>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:14px;">Key stays active for this session only. You'll need to re-enter on each visit until a backend is configured.</div>
+    <div class="modal-actions">
+      <button class="modal-save" onclick="saveApiKey()">Save & Activate</button>
+      <button class="modal-skip" onclick="closeApiModal()">Skip for Now</button>
+    </div>
   </div>
 </div>
 
@@ -300,7 +359,25 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       </div>
     </div>
     <div class="sidebar-list" id="sidebar-list"></div>
-  </div>
+    
+    <!-- REDDIT LIVE FEED -->
+    <div style="padding:8px;border-top:1px solid var(--border);flex-shrink:0;">
+      <div class="reddit-feed">
+        <div class="reddit-header">
+          <div class="reddit-header-left">
+            <div class="reddit-title">Reddit Live</div>
+            <div class="reddit-sub-chips">
+              <div class="reddit-chip active" onclick="setRedditSub('kansascity',this)">r/kansascity</div>
+              <div class="reddit-chip" onclick="setRedditSub('KCFoodScene',this)">r/KCFoodScene</div>
+            </div>
+          </div>
+          <button class="reddit-refresh" onclick="loadReddit()">↻</button>
+        </div>
+        <div id="reddit-posts" class="reddit-posts">
+          <div class="reddit-loading">Loading posts...</div>
+        </div>
+      </div>
+    </div>
 
   <!-- CONTENT -->
   <div class="content">
@@ -343,7 +420,13 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
         </div>
 
         <div class="import-field" style="margin-bottom:12px;">
-          <label>Paste Raw Text</label>
+          <label>Paste or Drop Text</label>
+          <div class="drop-zone" id="drop-zone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+            <div class="drop-zone-icon">⬇</div>
+            <div class="drop-zone-text">Drop a .txt file here</div>
+            <div class="drop-zone-sub">or paste text below</div>
+            <input type="file" accept=".txt,.md" onchange="handleFileSelect(event)"/>
+          </div>
           <textarea class="paste-zone" id="import-text" placeholder="Paste Facebook posts, Nextdoor threads, forum comments, or any community text here...
 
 Examples of high-signal content:
@@ -373,8 +456,149 @@ Examples of high-signal content:
 
 <script>
 // =============================================
-// DATA
+// API KEY MANAGER
 // =============================================
+let API_KEY = '';
+
+function showApiModal(){
+  document.getElementById('api-modal').style.display = 'flex';
+  document.getElementById('api-key-input').focus();
+}
+
+function closeApiModal(){
+  document.getElementById('api-modal').style.display = 'none';
+}
+
+function saveApiKey(){
+  const key = document.getElementById('api-key-input').value.trim();
+  if(!key){ alert('Please enter an API key.'); return; }
+  if(!key.startsWith('sk-ant-')){
+    alert('That doesn\'t look like an Anthropic API key. Keys start with sk-ant-');
+    return;
+  }
+  API_KEY = key;
+  document.getElementById('api-dot').className = 'api-dot-active';
+  document.getElementById('api-status-label').textContent = 'API Active';
+  closeApiModal();
+}
+
+function getHeaders(){
+  return {
+    'Content-Type':'application/json',
+    'x-api-key': API_KEY,
+    'anthropic-version':'2023-06-01'
+  };
+}
+
+// =============================================
+// REDDIT FEED
+// =============================================
+let activeRedditSub = 'kansascity';
+
+function setRedditSub(sub, el){
+  activeRedditSub = sub;
+  document.querySelectorAll('.reddit-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  loadReddit();
+}
+
+async function loadReddit(){
+  const container = document.getElementById('reddit-posts');
+  container.innerHTML = '<div class="reddit-loading">Fetching posts...</div>';
+  try {
+    const resp = await fetch(`https://www.reddit.com/r/${activeRedditSub}/new.json?limit=15`,{
+      headers:{'Accept':'application/json'}
+    });
+    const data = await resp.json();
+    const posts = data?.data?.children || [];
+    if(posts.length === 0){
+      container.innerHTML = '<div class="reddit-loading">No posts found.</div>';
+      return;
+    }
+    container.innerHTML = posts.map(p=>{
+      const post = p.data;
+      const age = timeAgo(post.created_utc);
+      const score = post.score > 999 ? (post.score/1000).toFixed(1)+'k' : post.score;
+      const preview = post.selftext ? post.selftext.substring(0,120)+'...' : '';
+      return `
+        <div class="reddit-post">
+          <div style="display:flex;align-items:flex-start;gap:6px;">
+            <div style="flex:1;">
+              <div class="reddit-post-title">${escapeHtml(post.title)}</div>
+              ${preview ? `<div style="font-size:10px;color:var(--text3);margin-bottom:3px;line-height:1.4;">${escapeHtml(preview)}</div>` : ''}
+              <div class="reddit-post-meta">
+                <span class="reddit-post-sub">r/${activeRedditSub}</span>
+                <span>↑ ${score}</span>
+                <span>${post.num_comments} comments</span>
+                <span>${age}</span>
+              </div>
+            </div>
+            <button class="reddit-import-btn" onclick="importFromReddit('${escapeAttr(post.title)}','${escapeAttr(post.selftext||'')}')">→ Import</button>
+          </div>
+        </div>`;
+    }).join('');
+  } catch(e) {
+    container.innerHTML = `<div class="reddit-loading" style="color:var(--danger);">Failed to load. Reddit may be blocking the request — try refreshing.</div>`;
+  }
+}
+
+function importFromReddit(title, body){
+  const text = body ? `${title}\n\n${body}` : title;
+  document.getElementById('import-text').value = text;
+  document.getElementById('import-source').value = 'reddit';
+  switchView('import', document.querySelector('.tab-btn.import-tab'));
+}
+
+function timeAgo(utc){
+  const sec = Math.floor(Date.now()/1000) - utc;
+  if(sec < 3600) return Math.floor(sec/60)+'m ago';
+  if(sec < 86400) return Math.floor(sec/3600)+'h ago';
+  return Math.floor(sec/86400)+'d ago';
+}
+
+function escapeHtml(str){
+  if(!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escapeAttr(str){
+  if(!str) return '';
+  return str.replace(/'/g,"\\'").replace(/\n/g,' ').substring(0,200);
+}
+
+// =============================================
+// DRAG & DROP FILE IMPORT
+// =============================================
+function handleDragOver(e){
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.add('dragover');
+}
+
+function handleDragLeave(e){
+  document.getElementById('drop-zone').classList.remove('dragover');
+}
+
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if(file) readFile(file);
+}
+
+function handleFileSelect(e){
+  const file = e.target.files[0];
+  if(file) readFile(file);
+}
+
+function readFile(file){
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('import-text').value = e.target.result;
+  };
+  reader.readAsText(file);
+}
+
+
 const NEIGHBORHOODS = [
   {
     id:'waldo', name:'Waldo', region:'south', score:87, pop:'18,400', income:'$62,000', age:34, signal:847,
@@ -702,10 +926,20 @@ Be specific, honest, and actionable. Reference actual data from the neighborhood
     .filter(m=>m.role==='user'||m.role==='ai')
     .map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text}));
 
+  if(!API_KEY){
+    typing.remove();
+    const errMsg = document.createElement('div');
+    errMsg.className = 'msg msg-ai fade-in';
+    errMsg.innerHTML = `<div class="msg-label">◎ PRESAGEIQ</div>No API key configured. <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Click here to add your Anthropic API key</span> to activate the AI analyst.`;
+    messages.appendChild(errMsg);
+    btn.disabled = false;
+    return;
+  }
+
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:getHeaders(),
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:1000,
@@ -774,10 +1008,17 @@ Respond in this exact JSON format:
 
 Return only valid JSON, no other text.`;
 
+  if(!API_KEY){
+    btn.disabled = false;
+    btn.textContent = 'Analyze Signal';
+    results.innerHTML = `<div class="result-card"><div class="result-header"><span class="result-label" style="color:var(--warn);">API Key Required</span></div><div class="result-body">Add your Anthropic API key to analyze signals. <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Click here to configure.</span></div></div>`;
+    return;
+  }
+
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:getHeaders(),
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:1000,
@@ -870,6 +1111,15 @@ function switchView(view, el){
 // =============================================
 // START
 // =============================================
+function init(){
+  document.getElementById('api-modal').style.display = 'none';
+  renderSidebar();
+  populateImportSelect();
+  loadReddit();
+  // Auto-show API modal after short delay if no key
+  setTimeout(()=>{ if(!API_KEY) showApiModal(); }, 800);
+}
+
 init();
 </script>
 </body>
