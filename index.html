@@ -458,6 +458,9 @@ Examples of high-signal content:
 // =============================================
 let API_KEY = '';
 
+// Vercel proxy endpoint — no API key needed in browser
+const PROXY_URL = 'https://presageiq-backend-9di2z1wux-walley-303s-projects.vercel.app/api/chat';
+
 function showApiModal(){
   document.getElementById('api-modal').style.display = 'flex';
   document.getElementById('api-key-input').focus();
@@ -481,11 +484,33 @@ function saveApiKey(){
 }
 
 function getHeaders(){
-  return {
-    'Content-Type':'application/json',
-    'x-api-key': API_KEY,
-    'anthropic-version':'2023-06-01'
-  };
+  const headers = { 'Content-Type': 'application/json' };
+  if(API_KEY) headers['x-api-key'] = API_KEY;
+  return headers;
+}
+
+async function callAI(body){
+  // Try proxy first — works for everyone without a key
+  try {
+    const resp = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if(resp.ok) return await resp.json();
+  } catch(e) {
+    // Proxy failed — fall through to direct call if key available
+  }
+
+  // Fallback: direct Anthropic call with user-provided key
+  if(!API_KEY) throw new Error('NO_KEY');
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(body)
+  });
+  if(!resp.ok) throw new Error('API_ERROR');
+  return await resp.json();
 }
 
 // =============================================
@@ -928,33 +953,18 @@ Be specific, honest, and actionable. Reference actual data from the neighborhood
     .filter(m=>m.role==='user'||m.role==='ai')
     .map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text}));
 
-  if(!API_KEY){
-    typing.remove();
-    const errMsg = document.createElement('div');
-    errMsg.className = 'msg msg-ai fade-in';
-    errMsg.innerHTML = `<div class="msg-label">◎ PRESAGEIQ</div>No API key configured. <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Click here to add your Anthropic API key</span> to activate the AI analyst.`;
-    messages.appendChild(errMsg);
-    btn.disabled = false;
-    return;
-  }
-
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:getHeaders(),
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        system:systemPrompt,
-        messages:conversationMessages
-      })
+    const data = await callAI({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:1000,
+      system:systemPrompt,
+      messages:conversationMessages
     });
-    const data = await resp.json();
-    const reply = data.content?.[0]?.text || 'Unable to get response. Check API configuration.';
+    const reply = data.content?.[0]?.text || 'Unable to get response.';
     typing.remove();
     const aiMsg = document.createElement('div');
     aiMsg.className = 'msg msg-ai fade-in';
-    aiMsg.innerHTML = `<div class="msg-label">◎ INSIGHT AI</div>${reply}`;
+    aiMsg.innerHTML = `<div class="msg-label">◎ PRESAGEIQ</div>${reply}`;
     messages.appendChild(aiMsg);
     chatHistories[id].push({role:'ai',text:reply});
     messages.scrollTop = messages.scrollHeight;
@@ -962,7 +972,11 @@ Be specific, honest, and actionable. Reference actual data from the neighborhood
     typing.remove();
     const errMsg = document.createElement('div');
     errMsg.className = 'msg msg-ai fade-in';
-    errMsg.innerHTML = `<div class="msg-label">◎ INSIGHT AI</div>API connection error. Ensure you're running this with a valid Anthropic API key configured.`;
+    if(e.message === 'NO_KEY'){
+      errMsg.innerHTML = `<div class="msg-label">◎ PRESAGEIQ</div>Proxy unavailable. <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Add your API key</span> to continue.`;
+    } else {
+      errMsg.innerHTML = `<div class="msg-label">◎ PRESAGEIQ</div>Connection error. Please try again.`;
+    }
     messages.appendChild(errMsg);
   }
   btn.disabled = false;
@@ -1018,17 +1032,12 @@ Return only valid JSON, no other text.`;
   }
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:getHeaders(),
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        system:systemPrompt,
-        messages:[{role:'user',content:text}]
-      })
+    const data = await callAI({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:1000,
+      system:systemPrompt,
+      messages:[{role:'user',content:text}]
     });
-    const data = await resp.json();
     const raw = data.content?.[0]?.text || '{}';
     let parsed;
     try{ parsed = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
@@ -1115,11 +1124,11 @@ function switchView(view, el){
 // =============================================
 function init(){
   document.getElementById('api-modal').style.display = 'none';
+  document.getElementById('api-dot').className = 'api-dot-active';
+  document.getElementById('api-status-label').textContent = 'API Active · Proxy';
   renderSidebar();
   populateImportSelect();
   loadReddit();
-  // Auto-show API modal after short delay if no key
-  setTimeout(()=>{ if(!API_KEY) showApiModal(); }, 800);
 }
 
 init();
