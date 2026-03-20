@@ -77,7 +77,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .filter-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;}
 .chip{background:var(--bg3);border:1px solid var(--border);color:var(--text3);padding:3px 8px;border-radius:3px;font-size:10px;cursor:pointer;transition:all .2s;letter-spacing:.5px;font-family:var(--font-mono);}
 .chip.active{background:rgba(0,212,170,.1);border-color:var(--accent);color:var(--accent);}
-.sidebar-list{flex:1;overflow-y:auto;padding:8px;min-height:0;}
+.sidebar-list{flex:1;overflow-y:auto;padding:8px;}
 .sidebar-list::-webkit-scrollbar{width:3px;}
 .sidebar-list::-webkit-scrollbar-track{background:transparent;}
 .sidebar-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
@@ -246,7 +246,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .export-btn:hover{border-color:var(--border2);color:var(--text);}
 
 /* EMPTY STATE */
-.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text3);text-align:center;padding:40px;}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:40px;overflow-y:auto;}
 .empty-icon{font-size:32px;margin-bottom:16px;opacity:.4;}
 .empty-title{font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:8px;color:var(--text2);}
 .empty-desc{font-size:11px;line-height:1.6;max-width:300px;}
@@ -359,28 +359,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       </div>
     </div>
     <div class="sidebar-list" id="sidebar-list"></div>
-
-    <!-- REDDIT LIVE FEED — COLLAPSIBLE -->
-    <div style="border-top:1px solid var(--border);flex-shrink:0;">
-      <div style="padding:6px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="toggleReddit()">
-        <div style="display:flex;align-items:center;gap:6px;">
-          <span style="font-size:9px;color:#ff4500;letter-spacing:1px;text-transform:uppercase;font-family:var(--font-mono);">● Reddit Live</span>
-          <div class="reddit-sub-chips" style="margin:0;">
-            <div class="reddit-chip active" onclick="event.stopPropagation();setRedditSub('kansascity',this)">r/kc</div>
-            <div class="reddit-chip" onclick="event.stopPropagation();setRedditSub('KCFoodScene',this)">r/food</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:4px;">
-          <button class="reddit-refresh" onclick="event.stopPropagation();loadReddit()">↻</button>
-          <span id="reddit-toggle-icon" style="font-size:10px;color:var(--text3);padding:2px 4px;">▲</span>
-        </div>
-      </div>
-      <div id="reddit-panel" style="max-height:180px;overflow:hidden;transition:max-height .3s ease;">
-        <div id="reddit-posts" class="reddit-posts" style="max-height:170px;">
-          <div class="reddit-loading">Loading posts...</div>
-        </div>
-      </div>
-    </div>
+  </div>
 
   <!-- CONTENT -->
   <div class="content">
@@ -390,6 +369,23 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
         <div class="empty-icon">◎</div>
         <div class="empty-title">Select a Neighborhood</div>
         <div class="empty-desc">Choose a neighborhood from the sidebar to view full market intelligence analysis, opportunity gaps, and AI analyst.</div>
+
+        <!-- REDDIT FEED ON EMPTY STATE -->
+        <div style="width:100%;max-width:700px;margin-top:32px;text-align:left;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:10px;color:#ff4500;letter-spacing:1px;text-transform:uppercase;font-family:var(--font-mono);">● Reddit Live Signal</span>
+              <div style="display:flex;gap:4px;">
+                <div class="reddit-chip active" onclick="setRedditSub('kansascity',this)">r/kansascity</div>
+                <div class="reddit-chip" onclick="setRedditSub('KCFoodScene',this)">r/KCFoodScene</div>
+              </div>
+            </div>
+            <button class="reddit-refresh" onclick="loadReddit()">↻ Refresh</button>
+          </div>
+          <div id="reddit-posts" style="display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto;">
+            <div class="reddit-loading">Loading live posts...</div>
+          </div>
+        </div>
       </div>
       <div id="nbhd-content" style="display:none;"></div>
     </div>
