@@ -378,10 +378,10 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 <!-- API KEY MODAL -->
 <div class="modal-overlay" id="api-modal">
   <div class="modal-box">
-    <div class="modal-title">Backup API Key</div>
-    <div class="modal-desc">PresageIQ's AI runs through a secure server proxy — no key needed for normal use. If the shared service is temporarily at capacity, enter your personal Anthropic key here as a backup. It routes through our server for this session only and is never stored. Get a key at <span style="color:var(--accent)">console.anthropic.com</span>.</div>
-    <input class="modal-input" type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off"/>
-    <div style="font-size:10px;color:var(--text3);margin-bottom:14px;">Active for this browser session only. Your key is sent to our proxy server and used server-side — never transmitted directly from your browser.</div>
+    <div class="modal-title">Personal API Key (Backup)</div>
+    <div class="modal-desc">PresageIQ AI runs through a shared proxy — no key needed for normal use. If the shared service is at capacity or you've hit the session limit, add your personal <strong style="color:var(--accent)">OpenAI API key</strong> here. It routes through our server for this session only and is never stored or logged. Get a key at <span style="color:var(--accent)">platform.openai.com/api-keys</span>.</div>
+    <input class="modal-input" type="password" id="api-key-input" placeholder="sk-..." autocomplete="off"/>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:14px;">Session only — resets when you close the tab. Your key is used server-side for each request, never exposed in the browser.</div>
     <div class="modal-actions">
       <button class="modal-save" onclick="saveApiKey()">Save & Activate</button>
       <button class="modal-skip" onclick="closeApiModal()">Skip for Now</button>
@@ -515,12 +515,17 @@ Examples of high-signal content:
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // =============================================
-// API KEY MANAGER
+// API KEY MANAGER + SESSION BUDGET
 // =============================================
 let API_KEY = '';
 
 // Stable Vercel production endpoint — all AI calls route through here
 const PROXY_URL = 'https://presageiq-backend.vercel.app/api/chat';
+
+// Client-side session budget — soft guardrail against accidental overuse
+// Hard rate limit lives in the proxy; this gives a graceful UX before hitting it
+const SESSION_LIMIT = 12;
+let sessionCalls = 0;
 
 function showApiModal(){
   document.getElementById('api-modal').style.display = 'flex';
@@ -534,21 +539,26 @@ function closeApiModal(){
 function saveApiKey(){
   const key = document.getElementById('api-key-input').value.trim();
   if(!key){ alert('Please enter an API key.'); return; }
-  if(!key.startsWith('sk-ant-')){
-    alert('That doesn\'t look like a valid Anthropic API key. Keys start with sk-ant-');
+  // Accept OpenAI keys (sk-...) or legacy Anthropic keys (sk-ant-...)
+  if(!key.startsWith('sk-')){
+    alert('That doesn\'t look like a valid API key. OpenAI keys start with sk-');
     return;
   }
   API_KEY = key;
+  sessionCalls = 0; // Reset budget when user provides their own key
   document.getElementById('api-dot').className = 'api-dot-active';
-  document.getElementById('api-status-label').textContent = 'API Active';
+  document.getElementById('api-status-label').textContent = 'API Active · Personal Key';
   closeApiModal();
 }
 
 async function callAI(body){
-  // Everything routes through the secure Vercel proxy — no direct browser→Anthropic calls
+  // Session budget check — warn before the proxy hard-limits
+  if(!API_KEY && sessionCalls >= SESSION_LIMIT){
+    throw new Error('SESSION_LIMIT');
+  }
+
   const headers = { 'Content-Type': 'application/json' };
-  // If user has entered their own key, send it as an override header
-  // It's used server-side for that request only — never exposed in the browser
+  // x-override-key routes user's personal key through proxy server-side (no CORS)
   if(API_KEY) headers['x-override-key'] = API_KEY;
 
   try {
@@ -556,15 +566,17 @@ async function callAI(body){
     const data = await resp.json();
 
     if(!resp.ok){
-      // Surface meaningful errors from Anthropic/proxy
-      if(data?.error?.message?.includes('credit balance')) throw new Error('CREDITS');
-      if(data?.code === 'NO_KEY') throw new Error('NO_KEY');
+      const code = data?.code || '';
+      if(code === 'CREDITS' || data?.error?.message?.includes('quota')) throw new Error('CREDITS');
+      if(code === 'RATE_LIMITED') throw new Error('RATE_LIMITED');
+      if(code === 'NO_KEY') throw new Error('NO_KEY');
       throw new Error('API_ERROR');
     }
+    sessionCalls++;
     return data;
   } catch(e) {
-    if(e.message === 'CREDITS' || e.message === 'NO_KEY' || e.message === 'API_ERROR') throw e;
-    // Network / CORS / DNS failure
+    const known = ['CREDITS','RATE_LIMITED','NO_KEY','API_ERROR','SESSION_LIMIT','NETWORK'];
+    if(known.includes(e.message)) throw e;
     throw new Error('NETWORK');
   }
 }
@@ -1368,10 +1380,14 @@ Be specific, honest, and actionable. Reference actual data from the neighborhood
     typing.remove();
     const errMsg = document.createElement('div');
     errMsg.className = 'msg msg-ai fade-in';
-    if(e.message === 'CREDITS'){
-      errMsg.innerHTML = `<div class="msg-label">◎ PRESAGEIQ</div>The shared AI service is temporarily at capacity. <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Add your own API key</span> to continue — it routes securely through our server.`;
+    if(e.message === 'SESSION_LIMIT'){
+      errMsg.innerHTML = `<div class="msg-label">◎ PRESAGEIQ</div>You've reached the session AI limit (${SESSION_LIMIT} calls). <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Add your own OpenAI API key</span> to continue without limits this session.`;
+    } else if(e.message === 'CREDITS'){
+      errMsg.innerHTML = `<div class="msg-label">◎ PRESAGEIQ</div>The shared AI service is temporarily at capacity. <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Add your OpenAI API key</span> to continue — it routes securely through our server.`;
+    } else if(e.message === 'RATE_LIMITED'){
+      errMsg.innerHTML = `<div class="msg-label">◎ PRESAGEIQ</div>Too many requests from this connection. Please wait a few minutes and try again.`;
     } else if(e.message === 'NO_KEY'){
-      errMsg.innerHTML = `<div class="msg-label">◎ PRESAGEIQ</div>AI service unavailable. <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Add a backup API key</span> to continue.`;
+      errMsg.innerHTML = `<div class="msg-label">◎ PRESAGEIQ</div>AI service unavailable. <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Add a backup OpenAI key</span> to continue.`;
     } else if(e.message === 'NETWORK'){
       errMsg.innerHTML = `<div class="msg-label">◎ PRESAGEIQ</div>Network error reaching the AI service. Check your connection and try again.`;
     } else {
@@ -1486,10 +1502,14 @@ Return only valid JSON, no other text.`;
     }
   } catch(e) {
     let errMsg;
-    if(e.message === 'CREDITS'){
-      errMsg = `The shared AI service is temporarily at capacity. <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Add your own API key</span> as a backup — it routes securely through our server.`;
+    if(e.message === 'SESSION_LIMIT'){
+      errMsg = `You've reached the session AI limit (${SESSION_LIMIT} calls). <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Add your OpenAI API key</span> to continue without limits.`;
+    } else if(e.message === 'CREDITS'){
+      errMsg = `The shared AI service is temporarily at capacity. <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Add your OpenAI API key</span> to continue.`;
+    } else if(e.message === 'RATE_LIMITED'){
+      errMsg = 'Too many requests from this connection. Please wait a few minutes and try again.';
     } else if(e.message === 'NO_KEY'){
-      errMsg = `AI service unavailable. <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Add a backup API key</span> to continue.`;
+      errMsg = `AI service unavailable. <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Add a backup OpenAI key</span> to continue.`;
     } else if(e.message === 'NETWORK'){
       errMsg = 'Network error reaching the AI service. Check your connection and try again.';
     } else {
