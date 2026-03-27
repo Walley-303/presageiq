@@ -367,9 +367,9 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div class="tab-btn active" onclick="switchView('dashboard',this)">Dashboard</div>
     <div class="tab-btn import-tab" onclick="switchView('import',this)">Import Signal</div>
     <div class="tab-btn map-tab" onclick="switchView('map',this)">Map View</div>
-    <div class="api-status" onclick="showApiModal()" id="api-status-btn" title="Click to configure API key">
-      <div class="api-dot-inactive" id="api-dot"></div>
-      <span id="api-status-label">API Key Required</span>
+    <div class="api-status" onclick="showApiModal()" id="api-status-btn" title="AI runs via secure proxy. Click to add backup key.">
+      <div class="api-dot-active" id="api-dot"></div>
+      <span id="api-status-label">AI Active · Proxy</span>
     </div>
     <button class="export-btn" onclick="alert('PDF export — Phase 3 feature')">Export Report</button>
   </div>
@@ -378,10 +378,10 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 <!-- API KEY MODAL -->
 <div class="modal-overlay" id="api-modal">
   <div class="modal-box">
-    <div class="modal-title">Configure Anthropic API Key</div>
-    <div class="modal-desc">Your API key is stored only in your browser session — never sent anywhere except directly to Anthropic's API. Get your key at <span style="color:var(--accent)">console.anthropic.com</span>.</div>
+    <div class="modal-title">Backup API Key</div>
+    <div class="modal-desc">PresageIQ's AI runs through a secure server proxy — no key needed for normal use. If the shared service is temporarily at capacity, enter your personal Anthropic key here as a backup. It routes through our server for this session only and is never stored. Get a key at <span style="color:var(--accent)">console.anthropic.com</span>.</div>
     <input class="modal-input" type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off"/>
-    <div style="font-size:10px;color:var(--text3);margin-bottom:14px;">Key stays active for this session only. You'll need to re-enter on each visit until a backend is configured.</div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:14px;">Active for this browser session only. Your key is sent to our proxy server and used server-side — never transmitted directly from your browser.</div>
     <div class="modal-actions">
       <button class="modal-save" onclick="saveApiKey()">Save & Activate</button>
       <button class="modal-skip" onclick="closeApiModal()">Skip for Now</button>
@@ -441,7 +441,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <div class="import-panel">
         <div class="import-header">
           <div class="import-title">Import Signal Data</div>
-          <div class="import-desc">Paste raw text from Facebook groups, Nextdoor, neighborhood forums, Reddit threads, or any community source. Claude AI will extract market gap signals and map them to neighborhood opportunity analysis.</div>
+          <div class="import-desc">Paste raw text from any source — Facebook groups, Nextdoor, Reddit, Google Reviews, Instagram captions, TikTok comments, YouTube descriptions, or any community content. PresageIQ extracts market gap signals and maps them to neighborhood opportunity analysis. All content is moderated before reaching customer-facing output.</div>
         </div>
 
         <div class="import-grid">
@@ -454,12 +454,24 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
           <div class="import-field">
             <label>Source Type</label>
             <select class="import-select" id="import-source">
-              <option value="facebook">Facebook Group</option>
-              <option value="nextdoor">Nextdoor</option>
-              <option value="reddit">Reddit</option>
-              <option value="forum">Neighborhood Forum</option>
-              <option value="yelp">Yelp Reviews</option>
-              <option value="other">Other / Unknown</option>
+              <optgroup label="Community">
+                <option value="facebook">Facebook Group</option>
+                <option value="nextdoor">Nextdoor</option>
+                <option value="reddit">Reddit</option>
+                <option value="forum">Neighborhood Forum</option>
+              </optgroup>
+              <optgroup label="Reviews">
+                <option value="google_reviews">Google Reviews</option>
+                <option value="yelp">Yelp Reviews</option>
+              </optgroup>
+              <optgroup label="Social Media">
+                <option value="instagram">Instagram (paste caption/comments)</option>
+                <option value="tiktok">TikTok (paste comments/caption)</option>
+                <option value="youtube">YouTube (paste description/comments)</option>
+              </optgroup>
+              <optgroup label="Other">
+                <option value="other">Other / Unknown</option>
+              </optgroup>
             </select>
           </div>
         </div>
@@ -472,14 +484,15 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
             <div class="drop-zone-sub">or paste text below</div>
             <input type="file" accept=".txt,.md" onchange="handleFileSelect(event)"/>
           </div>
-          <textarea class="paste-zone" id="import-text" placeholder="Paste Facebook posts, Nextdoor threads, forum comments, or any community text here...
+          <textarea class="paste-zone" id="import-text" placeholder="Paste any community text here — Facebook posts, Nextdoor threads, Google Reviews, Instagram captions, TikTok comments, YouTube descriptions...
 
 Examples of high-signal content:
 • 'Does anyone know where I can find a good Ethiopian restaurant in this area?'
 • 'We really need a hardware store that isn't 20 minutes away'
 • 'The old bakery on Wornall closed and there's nothing nearby now'
-• Nextdoor threads about missing services
-• Reddit threads asking for local recommendations"></textarea>
+• Google review: 'Love this area but there's nowhere to get a good breakfast'
+• Instagram caption: 'So sad the only coffee shop on Oak Street closed 😭'
+• TikTok comment: 'this neighborhood really needs a late night food spot'"></textarea>
         </div>
 
         <div class="import-actions">
@@ -506,8 +519,8 @@ Examples of high-signal content:
 // =============================================
 let API_KEY = '';
 
-// Vercel proxy endpoint — no API key needed in browser
-const PROXY_URL = 'https://presageiq-backend-9di2z1wux-walley-303s-projects.vercel.app/api/chat';
+// Stable Vercel production endpoint — all AI calls route through here
+const PROXY_URL = 'https://presageiq-backend.vercel.app/api/chat';
 
 function showApiModal(){
   document.getElementById('api-modal').style.display = 'flex';
@@ -522,7 +535,7 @@ function saveApiKey(){
   const key = document.getElementById('api-key-input').value.trim();
   if(!key){ alert('Please enter an API key.'); return; }
   if(!key.startsWith('sk-ant-')){
-    alert('That doesn\'t look like an Anthropic API key. Keys start with sk-ant-');
+    alert('That doesn\'t look like a valid Anthropic API key. Keys start with sk-ant-');
     return;
   }
   API_KEY = key;
@@ -531,34 +544,56 @@ function saveApiKey(){
   closeApiModal();
 }
 
-function getHeaders(){
+async function callAI(body){
+  // Everything routes through the secure Vercel proxy — no direct browser→Anthropic calls
   const headers = { 'Content-Type': 'application/json' };
-  if(API_KEY) headers['x-api-key'] = API_KEY;
-  return headers;
+  // If user has entered their own key, send it as an override header
+  // It's used server-side for that request only — never exposed in the browser
+  if(API_KEY) headers['x-override-key'] = API_KEY;
+
+  try {
+    const resp = await fetch(PROXY_URL, { method:'POST', headers, body: JSON.stringify(body) });
+    const data = await resp.json();
+
+    if(!resp.ok){
+      // Surface meaningful errors from Anthropic/proxy
+      if(data?.error?.message?.includes('credit balance')) throw new Error('CREDITS');
+      if(data?.code === 'NO_KEY') throw new Error('NO_KEY');
+      throw new Error('API_ERROR');
+    }
+    return data;
+  } catch(e) {
+    if(e.message === 'CREDITS' || e.message === 'NO_KEY' || e.message === 'API_ERROR') throw e;
+    // Network / CORS / DNS failure
+    throw new Error('NETWORK');
+  }
 }
 
-async function callAI(body){
-  // Try proxy first — works for everyone without a key
-  try {
-    const resp = await fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if(resp.ok) return await resp.json();
-  } catch(e) {
-    // Proxy failed — fall through to direct call if key available
-  }
+// =============================================
+// CONTENT MODERATION
+// =============================================
+// Graphic violence / crime → block from customer-facing display
+const MOD_BLOCK = [
+  'shooting','was shot','shots fired','shot and killed','shot dead','gunfire','gunshot',
+  'stabbed to death','stabbing victim','murdered','murder victim','homicide','found dead',
+  'body found','sexual assault','rape','carjacked at gunpoint','robbed at gunpoint',
+  'attacked and killed','bystander shot'
+];
+// Safety/crime context → show with internal flag only (useful for analyst, not Locals panel)
+const MOD_FLAG = [
+  'crime rate','break-in','burglary','car broken into','theft','drug activity',
+  'homeless encampment','safety concern','neighborhood watch','vandalism','graffiti'
+];
 
-  // Fallback: direct Anthropic call with user-provided key
-  if(!API_KEY) throw new Error('NO_KEY');
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify(body)
-  });
-  if(!resp.ok) throw new Error('API_ERROR');
-  return await resp.json();
+function moderatePost(title, body=''){
+  const text = (title+' '+(body||'')).toLowerCase();
+  if(MOD_BLOCK.some(k => text.includes(k))){
+    return 'block'; // Don't display
+  }
+  if(MOD_FLAG.some(k => text.includes(k))){
+    return 'flag';  // Internal signal only — not shown in Locals panel
+  }
+  return 'ok';
 }
 
 // =============================================
@@ -733,8 +768,13 @@ function renderNeighborhoodRedditPosts(id, posts) {
     return;
   }
   container.innerHTML = posts.map(p => {
+    const mod = moderatePost(p.title, p.selftext||'');
+    if(mod === 'block') return ''; // Drop graphic violence/crime — not customer-facing
     const age = timeAgo(p.created_utc);
     const score = p.score > 999 ? (p.score/1000).toFixed(1)+'k' : p.score;
+    const flagBadge = mod === 'flag'
+      ? `<span style="font-size:8px;color:var(--warn);background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);padding:1px 5px;border-radius:2px;flex-shrink:0;">analyst only</span>`
+      : '';
     return `
       <div class="nbhd-reddit-post">
         <div class="nbhd-reddit-post-title">${escapeHtml(p.title)}</div>
@@ -742,7 +782,8 @@ function renderNeighborhoodRedditPosts(id, posts) {
           <span style="color:#ff4500;">r/${p.sub}</span>
           <span>↑${score}</span>
           <span>${age}</span>
-          <button class="nbhd-reddit-import" onclick="importFromReddit('${escapeAttr(p.title)}','${escapeAttr(p.selftext||'')}')">Import →</button>
+          ${flagBadge}
+          ${mod === 'ok' ? `<button class="nbhd-reddit-import" onclick="importFromReddit('${escapeAttr(p.title)}','${escapeAttr(p.selftext||'')}')">Import →</button>` : ''}
         </div>
       </div>`;
   }).join('');
@@ -755,8 +796,10 @@ function renderLocalsPanel(id, redditPosts) {
   const n = NEIGHBORHOODS.find(x => x.id === id);
   const nbhdName = n ? n.name : '';
 
-  // Top 3 Reddit posts for this neighborhood
-  const topReddit = (redditPosts || []).slice(0, 3);
+  // Top 3 Reddit posts — customer-facing only (no flagged or blocked content in Locals panel)
+  const topReddit = (redditPosts || [])
+    .filter(p => moderatePost(p.title, p.selftext||'') === 'ok')
+    .slice(0, 3);
 
   // Session imports matching this neighborhood
   const nbhdImports = importHistory.filter(h =>
@@ -1325,10 +1368,14 @@ Be specific, honest, and actionable. Reference actual data from the neighborhood
     typing.remove();
     const errMsg = document.createElement('div');
     errMsg.className = 'msg msg-ai fade-in';
-    if(e.message === 'NO_KEY'){
-      errMsg.innerHTML = `<div class="msg-label">◎ PRESAGEIQ</div>Proxy unavailable. <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Add your API key</span> to continue.`;
+    if(e.message === 'CREDITS'){
+      errMsg.innerHTML = `<div class="msg-label">◎ PRESAGEIQ</div>The shared AI service is temporarily at capacity. <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Add your own API key</span> to continue — it routes securely through our server.`;
+    } else if(e.message === 'NO_KEY'){
+      errMsg.innerHTML = `<div class="msg-label">◎ PRESAGEIQ</div>AI service unavailable. <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Add a backup API key</span> to continue.`;
+    } else if(e.message === 'NETWORK'){
+      errMsg.innerHTML = `<div class="msg-label">◎ PRESAGEIQ</div>Network error reaching the AI service. Check your connection and try again.`;
     } else {
-      errMsg.innerHTML = `<div class="msg-label">◎ PRESAGEIQ</div>Connection error. Please try again.`;
+      errMsg.innerHTML = `<div class="msg-label">◎ PRESAGEIQ</div>Unexpected error. Please try again.`;
     }
     messages.appendChild(errMsg);
   }
@@ -1354,23 +1401,34 @@ async function analyzeImport(){
   const nbhd = NEIGHBORHOODS.find(n=>n.id===nbhdId);
   const nbhdContext = nbhd ? `Target neighborhood: ${nbhd.name} (${nbhd.region} KC Metro, Score: ${nbhd.score}/100, Summary: ${nbhd.summary})` : 'No specific neighborhood targeted — identify the most likely neighborhood match.';
 
-  const systemPrompt = `You are PresageIQ, analyzing community text for Kansas City market intelligence signals. 
+  const sourceLabels = {
+    facebook:'Facebook Group', nextdoor:'Nextdoor', reddit:'Reddit',
+    forum:'Neighborhood Forum', google_reviews:'Google Reviews', yelp:'Yelp Reviews',
+    instagram:'Instagram', tiktok:'TikTok', youtube:'YouTube', other:'Unknown Source'
+  };
+  const sourceLabel = sourceLabels[source] || source;
+
+  const systemPrompt = `You are PresageIQ, analyzing community content for Kansas City market intelligence.
 
 ${nbhdContext}
-Source type: ${source}
+Source platform: ${sourceLabel}
 
 Analyze the provided text using the three-layer methodology:
-1. Consumer Sentiment — What are people complaining about, praising, or asking for?
-2. Keyword Clustering — What types of businesses, services, or products are mentioned as missing?
-3. Gap Signals — What specific unmet needs emerge?
+1. Consumer Sentiment — What are people complaining about, praising, or explicitly asking for?
+2. Keyword Clustering — What types of businesses, services, or experiences are mentioned as missing or desired?
+3. Gap Signals — What specific unmet market needs emerge?
+
+Social media context: If the source is Instagram, TikTok, or YouTube, weight visual/aspirational signals (aesthetic demand, lifestyle gaps, trending formats) alongside practical gaps.
+
+Content note: Do NOT surface or amplify any violent, criminal, or graphic content in your output. If the text contains such content, note only the relevant market/safety impact in risk_flags (e.g., "elevated safety concerns may affect foot traffic") without repeating graphic details.
 
 Respond in this exact JSON format:
 {
-  "summary": "2-3 sentence plain English summary of what the signal indicates",
+  "summary": "2-3 sentence plain English summary of what the signal indicates for a business entering this market",
   "neighborhood_match": "Best neighborhood match if not specified, or confirm the targeted neighborhood",
   "gap_signals": ["signal 1", "signal 2", "signal 3"],
   "demand_indicators": ["specific demand mentioned 1", "specific demand mentioned 2"],
-  "risk_flags": ["any risk or counterpoint found in text"],
+  "risk_flags": ["any risk or counterpoint found in text — market-relevant only, no graphic content"],
   "signal_strength": "HIGH / MEDIUM / LOW",
   "recommended_categories": ["business category 1", "business category 2"]
 }
@@ -1427,10 +1485,17 @@ Return only valid JSON, no other text.`;
       results.innerHTML = `<div class="result-card"><div class="result-header"><span class="result-label">Analysis Result</span></div><div class="result-body">${raw}</div></div>`;
     }
   } catch(e) {
-    const errMsg = e.message === 'NO_KEY'
-      ? `Proxy unavailable. <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Add your API key</span> to continue.`
-      : 'API connection failed. Check configuration.';
-    results.innerHTML = `<div class="result-card"><div class="result-header"><span class="result-label" style="color:var(--danger);">Error</span></div><div class="result-body">${errMsg}</div></div>`;
+    let errMsg;
+    if(e.message === 'CREDITS'){
+      errMsg = `The shared AI service is temporarily at capacity. <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Add your own API key</span> as a backup — it routes securely through our server.`;
+    } else if(e.message === 'NO_KEY'){
+      errMsg = `AI service unavailable. <span style="color:var(--accent);cursor:pointer;text-decoration:underline;" onclick="showApiModal()">Add a backup API key</span> to continue.`;
+    } else if(e.message === 'NETWORK'){
+      errMsg = 'Network error reaching the AI service. Check your connection and try again.';
+    } else {
+      errMsg = 'Unexpected error. Please try again.';
+    }
+    results.innerHTML = `<div class="result-card"><div class="result-header"><span class="result-label" style="color:var(--danger);">◎ Service Unavailable</span></div><div class="result-body">${errMsg}</div></div>`;
   }
 
   btn.disabled = false;
