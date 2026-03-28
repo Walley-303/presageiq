@@ -332,8 +332,25 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .locals-add-link{font-size:10px;color:var(--accent2);cursor:pointer;text-decoration:underline;margin-top:10px;display:inline-block;}
 .locals-empty{font-size:11px;color:var(--text3);padding:4px 0;}
 
-/* MAP TAB */
-.tab-btn.map-tab.active,.tab-btn.map-tab:hover{border-color:var(--purple);color:var(--purple);background:rgba(139,92,246,.05);}
+/* MAP TOGGLE BUTTON */
+.map-toggle-btn{background:transparent;border:1px solid var(--border);color:var(--text3);padding:5px 12px;border-radius:4px;font-family:var(--font-mono);font-size:10px;letter-spacing:1px;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.map-toggle-btn:hover,.map-toggle-btn.active{border-color:var(--purple);color:var(--purple);background:rgba(139,92,246,.05);}
+
+/* KEYWORD SEARCH */
+.kw-search-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:20px;}
+.kw-search-desc{font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.5;}
+.kw-input-row{display:flex;gap:8px;margin-bottom:10px;}
+.kw-input{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:4px;font-family:var(--font-mono);font-size:12px;outline:none;transition:border .2s;}
+.kw-input:focus{border-color:var(--accent);}
+.kw-input::placeholder{color:var(--text3);}
+.kw-btn{background:transparent;border:1px solid var(--accent);color:var(--accent);padding:8px 16px;border-radius:4px;font-family:var(--font-mono);font-size:11px;cursor:pointer;transition:all .2s;letter-spacing:.5px;white-space:nowrap;}
+.kw-btn:hover{background:rgba(232,160,69,.1);}
+.kw-btn:disabled{opacity:.5;cursor:not-allowed;}
+.kw-result-card{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:9px 11px;margin-bottom:6px;cursor:pointer;transition:all .2s;}
+.kw-result-card:hover{border-color:var(--border2);}
+.kw-result-title{font-size:11px;color:var(--text);line-height:1.35;margin-bottom:5px;}
+.kw-result-meta{display:flex;align-items:center;gap:10px;font-size:9px;color:var(--text3);}
+.kw-result-body{font-size:10px;color:var(--text3);line-height:1.4;margin-top:5px;font-style:italic;border-top:1px solid var(--border);padding-top:5px;}
 
 /* MAP VIEW */
 #map-view{flex:1;display:none;overflow:hidden;position:relative;flex-direction:column;}
@@ -417,9 +434,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div class="logo-sub">Towns &amp; Walley Intelligence · v2.0</div>
   </div>
   <div class="topbar-right">
-    <div class="tab-btn active" onclick="switchView('dashboard',this)">Dashboard</div>
-    <div class="tab-btn import-tab" onclick="switchView('import',this)">Import Signal</div>
-    <div class="tab-btn map-tab" onclick="switchView('map',this)">Map View</div>
+    <button class="map-toggle-btn" id="map-toggle-btn" onclick="toggleMapView()">◎ Map View</button>
     <div class="api-status" onclick="showApiModal()" id="api-status-btn" title="AI runs via secure proxy. Click to add backup key.">
       <div class="api-dot-active" id="api-dot"></div>
       <span id="api-status-label">AI Active · Proxy</span>
@@ -482,7 +497,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div id="map-view">
       <div class="map-info-bar">
         <div class="map-info-label">PresageIQ · KC Metro</div>
-        <div class="map-info-stat">◎ <span>25</span> neighborhoods mapped</div>
+        <div class="map-info-stat">◎ <span id="map-nbhd-count">26</span> neighborhoods mapped</div>
         <div class="map-info-stat"><span style="color:var(--accent);">■</span> High &nbsp;<span style="color:var(--warn);">■</span> Medium &nbsp;<span style="color:var(--text3);">■</span> Lower opportunity</div>
         <div class="map-info-stat" style="margin-left:auto;font-size:9px;color:var(--text3);">Click any marker to view analysis</div>
       </div>
@@ -876,7 +891,7 @@ function renderLocalsPanel(id, redditPosts) {
   if(topReddit.length === 0 && nbhdImports.length === 0) {
     panel.innerHTML = `
       <div class="locals-empty">No community signals collected yet for ${nbhdName}. Import reviews, social posts, or community content to build this panel.</div>
-      <span class="locals-add-link" onclick="switchView('import',document.querySelector('.tab-btn.import-tab'))">+ Import signal →</span>`;
+      <span class="locals-add-link" onclick="switchView('import')">+ Import signal →</span>`;
     return;
   }
 
@@ -909,7 +924,7 @@ function renderLocalsPanel(id, redditPosts) {
       </div>`;
   });
 
-  html += `<span class="locals-add-link" style="display:inline-block;margin-top:10px;" onclick="switchView('import',document.querySelector('.tab-btn.import-tab'))">+ Add signal for ${nbhdName} →</span>`;
+  html += `<span class="locals-add-link" style="display:inline-block;margin-top:10px;" onclick="switchView('import')">+ Add signal for ${nbhdName} →</span>`;
   panel.innerHTML = html;
 }
 
@@ -1249,7 +1264,7 @@ function setFilter(f, el){
 function selectNeighborhood(id){
   activeNbhd = id;
   renderSidebar();
-  if(currentView!=='dashboard') switchView('dashboard', document.querySelector('.tab-btn:not(.import-tab)'));
+  if(currentView!=='dashboard') switchView('dashboard');
   const n = NEIGHBORHOODS.find(x=>x.id===id);
   if(!n) return;
   const empty = document.getElementById('empty-state');
@@ -1333,6 +1348,16 @@ function selectNeighborhood(id){
     <div class="section-label">What the Locals Think</div>
     <div id="locals-panel-${id}" class="locals-panel">
       <div class="locals-empty">Loading community signals...</div>
+    </div>
+
+    <div class="section-label">Search Community Posts</div>
+    <div class="kw-search-box">
+      <div class="kw-search-desc">Search Reddit for what locals are actually saying about ${n.name}. Enter any keyword or topic — the results pull live posts from KC-area subreddits.</div>
+      <div class="kw-input-row">
+        <input class="kw-input" id="kw-input-${id}" placeholder="e.g. grocery, coffee shop, parking, food desert..." onkeydown="if(event.key==='Enter')searchKeywords('${id}')"/>
+        <button class="kw-btn" id="kw-btn-${id}" onclick="searchKeywords('${id}')">◎ Search</button>
+      </div>
+      <div id="kw-results-${id}"></div>
     </div>
 
     <div class="section-label">Test a Business Idea</div>
@@ -1765,12 +1790,88 @@ function renderImportHistory(){
 }
 
 // =============================================
+// KEYWORD SEARCH
+// =============================================
+async function searchKeywords(id) {
+  const input = document.getElementById(`kw-input-${id}`);
+  const results = document.getElementById(`kw-results-${id}`);
+  const btn = document.getElementById(`kw-btn-${id}`);
+  const query = (input?.value||'').trim();
+  if(!query) return;
+
+  const n = NEIGHBORHOODS.find(x => x.id === id);
+  if(!n) return;
+  const nbhdTerm = getNeighborhoodSearchTerm(n);
+
+  btn.disabled = true;
+  results.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:8px 0;">Searching Reddit...</div>';
+
+  const allPosts = [];
+  const subs = ['kansascity', 'KCFoodScene', 'kansascitylocal'];
+  const searchTerm = `${nbhdTerm} ${query}`;
+
+  for(const sub of subs) {
+    try {
+      const resp = await fetch(
+        `https://www.reddit.com/r/${sub}/search.json?q=${encodeURIComponent(searchTerm)}&restrict_sr=1&sort=relevance&t=year&limit=10`,
+        { headers: { 'Accept': 'application/json' } }
+      );
+      if(!resp.ok) continue;
+      const data = await resp.json();
+      const posts = (data?.data?.children || []).map(c => ({ ...c.data, sub }));
+      allPosts.push(...posts);
+    } catch(e) {}
+  }
+
+  btn.disabled = false;
+
+  if(allPosts.length === 0) {
+    results.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:8px 0;">No posts found. Try broader keywords or a different term.</div>';
+    return;
+  }
+
+  // Deduplicate and sort by relevance/score
+  const seen = new Set();
+  const unique = allPosts.filter(p => { if(seen.has(p.id)) return false; seen.add(p.id); return true; });
+  unique.sort((a, b) => b.score - a.score);
+  const top = unique.slice(0, 10);
+
+  results.innerHTML = `<div style="font-size:10px;color:var(--text3);margin-bottom:8px;letter-spacing:.5px;">${top.length} result${top.length!==1?'s':''} for "${escapeHtml(query)}" in ${n.name}</div>` +
+    top.map(p => {
+      const age = timeAgo(p.created_utc);
+      const score = p.score > 999 ? (p.score/1000).toFixed(1)+'k' : p.score;
+      const url = `https://reddit.com${p.permalink}`;
+      const snippet = p.selftext ? p.selftext.replace(/\n+/g,' ').substring(0, 180) + (p.selftext.length > 180 ? '...' : '') : '';
+      return `
+        <div class="kw-result-card" onclick="window.open('${escapeAttr(url)}','_blank')">
+          <div class="kw-result-title">${escapeHtml(p.title)}</div>
+          <div class="kw-result-meta">
+            <span style="color:#ff4500;">r/${p.sub}</span>
+            <span>↑${score}</span>
+            <span>${age}</span>
+            <span style="margin-left:auto;color:var(--accent2);">↗ Open</span>
+          </div>
+          ${snippet ? `<div class="kw-result-body">${escapeHtml(snippet)}</div>` : ''}
+        </div>`;
+    }).join('');
+}
+
+// =============================================
 // VIEW SWITCHING
 // =============================================
+function toggleMapView(){
+  const btn = document.getElementById('map-toggle-btn');
+  if(currentView === 'map'){
+    switchView('dashboard');
+    if(btn) btn.classList.remove('active');
+  } else {
+    switchView('map');
+    if(btn) btn.classList.add('active');
+  }
+}
+
 function switchView(view, el){
   currentView = view;
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  if(el) el.classList.add('active');
   document.getElementById('dashboard-view').style.display = view==='dashboard'?'block':'none';
   document.getElementById('import-view').style.display = view==='import'?'block':'none';
   const mapView = document.getElementById('map-view');
