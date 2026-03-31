@@ -385,9 +385,18 @@ async function submitForm(){
   if(!email.includes('@')){alert('Please enter a valid email address.');return;}
   btn.disabled=true;btn.textContent='Sending...';
   try{
-    const resp=await fetch('https://presageiq-backend.vercel.app/api/email',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name,email,concept:`${service} — ${concept}`,neighborhood:neighborhood||'Not specified',message:`Phone: ${phone||'Not provided'}\n\n${message}`})
+    const resp=await fetch('https://formspree.io/f/xeepkdqd',{
+      method:'POST',
+      headers:{'Accept':'application/json','Content-Type':'application/json'},
+      body:JSON.stringify({
+        name,
+        email,
+        service,
+        concept,
+        neighborhood:neighborhood||'Not specified',
+        phone:phone||'Not provided',
+        message:message||'None provided'
+      })
     });
     if(!resp.ok)throw new Error();
     document.getElementById('contact-form').style.display='none';
