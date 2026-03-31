@@ -414,6 +414,36 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .kw-add-btn{background:transparent;border:1px solid var(--accent2);color:var(--accent2);padding:5px 10px;border-radius:3px;font-family:var(--font-mono);font-size:10px;cursor:pointer;transition:all .2s;}
 .kw-add-btn:hover{background:rgba(0,153,255,.1);}
 
+/* IDEA TESTER HERO */
+.idea-tester-hero{
+  background:linear-gradient(135deg,rgba(167,139,250,.06),rgba(232,160,69,.04));
+  border:1px solid rgba(167,139,250,.25);
+  border-radius:8px;padding:20px;margin-bottom:20px;
+}
+.idea-hero-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--purple);margin-bottom:6px;}
+.idea-hero-sub{font-size:11px;color:var(--text2);line-height:1.55;margin-bottom:14px;max-width:680px;}
+.idea-hero-row{display:flex;gap:8px;}
+.idea-hero-input{
+  flex:1;background:var(--bg3);border:1px solid rgba(167,139,250,.3);
+  color:var(--text);padding:11px 14px;border-radius:5px;
+  font-family:var(--font-mono);font-size:12px;outline:none;transition:border .2s;
+}
+.idea-hero-input:focus{border-color:var(--purple);box-shadow:0 0 0 2px rgba(167,139,250,.1);}
+.idea-hero-input::placeholder{color:var(--text3);}
+.idea-hero-btn{
+  background:var(--purple);border:none;color:#fff;
+  padding:11px 20px;border-radius:5px;font-family:var(--font-mono);
+  font-size:11px;font-weight:500;letter-spacing:.5px;cursor:pointer;
+  transition:opacity .2s;white-space:nowrap;
+}
+.idea-hero-btn:hover{opacity:.85;}
+.idea-hero-btn:disabled{opacity:.4;cursor:not-allowed;}
+.idea-hero-result{
+  margin-top:16px;font-size:12px;color:var(--text2);line-height:1.75;
+  padding:14px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:5px;
+}
+
 /* CLEAN LOCAL QUOTES */
 .local-quote{padding:9px 0;border-bottom:1px solid var(--border);}
 .local-quote:last-child{border-bottom:none;padding-bottom:0;}
@@ -447,7 +477,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 <div class="modal-overlay" id="api-modal">
   <div class="modal-box">
     <div class="modal-title">Personal API Key (Backup)</div>
-    <div class="modal-desc">PresageIQ AI runs through a shared proxy — no key needed for normal use. If the shared service is at capacity or you've hit the session limit, add your personal <strong style="color:var(--accent)">OpenAI API key</strong> here. It routes through our server for this session only and is never stored or logged. Get a key at <span style="color:var(--accent)">platform.openai.com/api-keys</span>.</div>
+    <div class="modal-desc">PresageIQ AI runs through a secure proxy — no key needed for normal use. If the shared service is at capacity or you've hit the session limit, add your personal <strong style="color:var(--accent)">Anthropic API key</strong> here. It routes through our server for this session only and is never stored or logged. Get a key at <span style="color:var(--accent)">console.anthropic.com/settings/keys</span>.</div>
     <input class="modal-input" type="password" id="api-key-input" placeholder="sk-..." autocomplete="off"/>
     <div style="font-size:10px;color:var(--text3);margin-bottom:14px;">Session only — resets when you close the tab. Your key is used server-side for each request, never exposed in the browser.</div>
     <div class="modal-actions">
@@ -1326,6 +1356,17 @@ function selectNeighborhood(id){
       <div class="nbhd-tags">${tagsHTML}</div>
     </div>
 
+    <!-- IDEA TESTER — PROMINENT TOP INPUT -->
+    <div class="idea-tester-hero">
+      <div class="idea-hero-label">◎ TEST YOUR BUSINESS IDEA</div>
+      <div class="idea-hero-sub">Describe a concept — PresageIQ will analyze market fit, surface what locals are actually saying, and tell you what works, what doesn't, and what to adjust.</div>
+      <div class="idea-hero-row">
+        <input class="idea-hero-input" id="idea-input-${id}" placeholder="e.g. I'm considering opening a wine bar in ${n.name} — tapas, natural wine, $18 avg check..." onkeydown="if(event.key==='Enter')testIdea('${id}')"/>
+        <button class="idea-hero-btn" id="idea-btn-${id}" onclick="testIdea('${id}')">Analyze →</button>
+      </div>
+      <div class="idea-hero-result" id="idea-result-${id}" style="display:none;"></div>
+    </div>
+
     <div class="metrics-row">
       <div class="metric-card"><div class="metric-label">Population</div><div class="metric-value">${n.pop}</div><div class="metric-sub">Metro estimate</div></div>
       <div class="metric-card"><div class="metric-label">Median Income</div><div class="metric-value">${n.income}</div><div class="metric-sub">Household / year</div></div>
@@ -1347,27 +1388,7 @@ function selectNeighborhood(id){
 
     <div class="section-label">What the Locals Think</div>
     <div id="locals-panel-${id}" class="locals-panel">
-      <div class="locals-empty">Loading community signals...</div>
-    </div>
-
-    <div class="section-label">Search Community Posts</div>
-    <div class="kw-search-box">
-      <div class="kw-search-desc">Search Reddit for what locals are actually saying about ${n.name}. Enter any keyword or topic — the results pull live posts from KC-area subreddits.</div>
-      <div class="kw-input-row">
-        <input class="kw-input" id="kw-input-${id}" placeholder="e.g. grocery, coffee shop, parking, food desert..." onkeydown="if(event.key==='Enter')searchKeywords('${id}')"/>
-        <button class="kw-btn" id="kw-btn-${id}" onclick="searchKeywords('${id}')">◎ Search</button>
-      </div>
-      <div id="kw-results-${id}"></div>
-    </div>
-
-    <div class="section-label">Test a Business Idea</div>
-    <div class="idea-tester">
-      <div class="idea-desc">Describe a concept — PresageIQ will evaluate its fit against ${n.name}'s market data, tell you what works, what doesn't, and what to adjust.</div>
-      <div class="idea-input-row">
-        <input class="idea-input" id="idea-input-${id}" placeholder="e.g. Korean BBQ with late-night hours, $14 avg check, 40 seats..."/>
-        <button class="idea-test-btn" id="idea-btn-${id}" onclick="testIdea('${id}')">◎ Test Idea</button>
-      </div>
-      <div class="idea-result" id="idea-result-${id}"></div>
+      <div class="locals-empty" style="color:var(--text3);font-size:11px;padding:4px 0;">Enter a business idea above — PresageIQ will pull what locals are actually saying about concepts like yours from Reddit, reviews, and KC food blogs.</div>
     </div>
 
     <div class="section-label">AI Analyst — ${n.name}</div>
@@ -1384,7 +1405,7 @@ function selectNeighborhood(id){
     </div>
   `;
 
-  // Render locals panel (imports only — Reddit removed from customer view)
+  // Locals panel starts empty — populated when user submits idea
   renderLocalsPanel(id, []);
 }
 
@@ -1510,7 +1531,7 @@ async function analyzeGap(nbhdId, gapIdx) {
   contentEl.innerHTML = `<div class="msg-typing" style="padding:4px 0;"><div class="dot-t"></div><div class="dot-t"></div><div class="dot-t"></div></div>`;
   try {
     const data = await callAI({
-      model:'gpt-4o-mini', max_tokens:600,
+      model:'claude-sonnet-4-6', max_tokens:600,
       system:`You are PresageIQ, a Kansas City market intelligence analyst. Be direct, specific, and practical. No filler.`,
       messages:[{role:'user',content:`Gap opportunity: ${g.title}\nDescription: ${g.desc}\nDemand ${g.demand}%, Saturation ${g.sat}%, Viability ${g.via}%\nNeighborhood: ${n.name} — ${n.summary}\n\nRespond with:\n1. WHY THIS GAP EXISTS (2 sentences)\n2. THREE ENTRY STRATEGIES (numbered, specific to this neighborhood)\n3. WHAT SUCCESS LOOKS LIKE here (1 sentence)\nKC-specific, actionable, no generic advice.`}]
     });
@@ -1550,7 +1571,7 @@ async function analyzeRisk(nbhdId, riskIdx) {
   expEl.innerHTML = `<div class="msg-typing" style="padding:4px 0;"><div class="dot-t"></div><div class="dot-t"></div><div class="dot-t"></div></div>`;
   try {
     const data = await callAI({
-      model:'gpt-4o-mini', max_tokens:400,
+      model:'claude-sonnet-4-6', max_tokens:400,
       system:`You are PresageIQ. Give concrete, actionable mitigation strategies for business risks in KC neighborhoods. 3 bullets, no fluff.`,
       messages:[{role:'user',content:`Risk in ${n.name} (${r.level} level): ${r.text}\n\nGive 3 specific, actionable mitigation strategies a business owner can actually implement. Be direct.`}]
     });
@@ -1598,7 +1619,7 @@ function renderKeywordChips(id) {
 }
 
 // =============================================
-// BUSINESS IDEA TESTER
+// BUSINESS IDEA TESTER — FULL INTELLIGENCE FLOW
 // =============================================
 async function testIdea(id) {
   const n = NEIGHBORHOODS.find(x => x.id === id);
@@ -1606,40 +1627,192 @@ async function testIdea(id) {
   const input = document.getElementById(`idea-input-${id}`);
   const result = document.getElementById(`idea-result-${id}`);
   const btn = document.getElementById(`idea-btn-${id}`);
+  const localsPanel = document.getElementById(`locals-panel-${id}`);
   const concept = input?.value.trim();
-  if(!concept) { alert('Describe a business concept first.'); return; }
+  if(!concept) { input?.focus(); return; }
 
   result.style.display = 'block';
-  result.innerHTML = `<div class="msg-typing" style="padding:0;"><div class="dot-t"></div><div class="dot-t"></div><div class="dot-t"></div></div>`;
+  result.innerHTML = `<div style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:8px;"><div class="msg-typing" style="padding:0;display:inline-flex;"><div class="dot-t"></div><div class="dot-t"></div><div class="dot-t"></div></div> Analyzing market fit for ${n.name}...</div>`;
+  if(localsPanel) localsPanel.innerHTML = `<div class="locals-empty" style="color:var(--text3);font-size:11px;">Scanning community sources for signals related to your idea...</div>`;
   btn.disabled = true;
 
-  try {
-    const data = await callAI({
-      model:'gpt-4o-mini', max_tokens:700,
-      system:`You are PresageIQ evaluating business concepts against KC neighborhood market data. Be honest and direct. A bad fit is valuable intel. No generic advice.`,
-      messages:[{role:'user',content:`Business concept: ${concept}
+  // Step 1: AI analysis — runs in parallel with Reddit scan
+  const aiPromise = callAI({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 900,
+    system: `You are PresageIQ, a Kansas City market intelligence analyst. Evaluate business concepts against real neighborhood data. Be honest — a bad fit is valuable intel. Be specific and direct. No generic advice.
+
+At the end of your analysis, on a new line, output exactly this format (used to scan community sources):
+KEYWORDS: word1, word2, word3, word4, word5
+(5-8 search keywords derived from the concept — e.g. wine bar, tapas, natural wine, date night, small plates)`,
+    messages: [{
+      role: 'user',
+      content: `Business concept: ${concept}
 
 Neighborhood: ${n.name} (${n.region} KC Metro)
-Score: ${n.score}/100 | Pop: ${n.pop} | Income: ${n.income} | Age: ${n.age}
+Opportunity Score: ${n.score}/100 | Population: ${n.pop} | Median Income: ${n.income} | Median Age: ${n.age}
 Summary: ${n.summary}
-Gaps: ${n.gaps.map(g=>`${g.title} (demand ${g.demand}%, sat ${g.sat}%)`).join(', ')}
-Risks: ${n.risks.map(r=>r.text).join(' | ')}
+Opportunity Gaps: ${n.gaps.map(g => `${g.title} (demand ${g.demand}%, saturation ${g.sat}%, viability ${g.via}%)`).join(' | ')}
+Risk Signals: ${n.risks.map(r => `[${r.level.toUpperCase()}] ${r.text}`).join(' | ')}
 
-Evaluate this concept. Structure:
-FIT SCORE: X/10 — one sentence why
-WHAT WORKS: 2-3 specific things going for this concept here
-WHAT DOESN'T: 1-2 honest concerns or misalignments with this market
-ONE ADJUSTMENT: the single most impactful change to improve fit
-BETTER FIT: mention another KC neighborhood if this concept fits better elsewhere (optional)
+Evaluate this concept for this specific neighborhood. Use this structure:
+**FIT SCORE: X/10** — one sentence why
+**WHAT WORKS** — 2-3 specific things going for this concept in ${n.name}
+**WHAT DOESN'T** — 1-2 honest concerns or misalignments with this market
+**ONE ADJUSTMENT** — the single most impactful change to improve fit here
+**COMPARABLE FIT** — one other KC neighborhood where this concept fits better or worse (brief)
 
-Be specific to this neighborhood. Reference actual data.`}]
-    });
-    const text = data.content?.[0]?.text || '';
-    result.innerHTML = text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+Reference actual neighborhood data. Be specific to ${n.name}.`
+    }]
+  });
+
+  // Step 2: Extract neighborhood search term
+  const nbhdTerm = getNeighborhoodSearchTerm(n);
+
+  // Run AI and first Reddit scan together
+  let aiText = '';
+  let extractedKeywords = [];
+
+  try {
+    const aiData = await aiPromise;
+    aiText = aiData.content?.[0]?.text || '';
+
+    // Extract keywords line from AI response
+    const kwMatch = aiText.match(/KEYWORDS:\s*([^\n]+)/i);
+    if(kwMatch) {
+      extractedKeywords = kwMatch[1].split(',').map(k => k.trim().toLowerCase()).filter(Boolean).slice(0, 8);
+      // Remove keywords line from displayed text
+      aiText = aiText.replace(/KEYWORDS:[^\n]*/i, '').trim();
+    }
   } catch(e) {
-    result.innerHTML = `<span style="color:var(--danger);">Analysis failed — try again.</span>`;
+    aiText = '';
   }
+
+  // Render AI result
+  if(result) {
+    if(aiText) {
+      result.innerHTML = aiText
+        .replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--text);">$1</strong>')
+        .replace(/\n\n/g, '<br><br>')
+        .replace(/\n/g, '<br>');
+    } else {
+      result.innerHTML = `<span style="color:var(--danger);font-size:11px;">Analysis failed — try again.</span>`;
+    }
+  }
+
   btn.disabled = false;
+
+  // Step 3: Reddit scan using extracted keywords + neighborhood term
+  if(extractedKeywords.length > 0 && localsPanel) {
+    localsPanel.innerHTML = `<div class="locals-empty" style="color:var(--text3);font-size:11px;">Pulling community signals for: ${extractedKeywords.slice(0,4).join(', ')}...</div>`;
+
+    const subs = ['kansascity', 'KCFoodScene', 'kansascitylocal'];
+    let allPosts = [];
+
+    // Search with neighborhood + top keywords combined
+    const searchQueries = [
+      `${nbhdTerm} ${extractedKeywords.slice(0, 3).join(' ')}`,
+      extractedKeywords.slice(0, 4).join(' ')
+    ];
+
+    try {
+      const fetches = [];
+      for(const sub of subs) {
+        for(const q of searchQueries) {
+          fetches.push(
+            fetch(`https://www.reddit.com/r/${sub}/search.json?q=${encodeURIComponent(q)}&restrict_sr=1&sort=relevance&t=year&limit=8`, {
+              headers: { 'Accept': 'application/json' }
+            }).then(r => r.ok ? r.json() : null).catch(() => null)
+          );
+        }
+      }
+      const results = await Promise.allSettled(fetches);
+      const subCycle = [...subs, ...subs]; // matches the sub order above
+      results.forEach((res, i) => {
+        if(res.status === 'fulfilled' && res.value?.data?.children) {
+          const subIdx = Math.floor(i / searchQueries.length);
+          res.value.data.children.forEach(c => allPosts.push({ ...c.data, sub: subCycle[subIdx] }));
+        }
+      });
+
+      // Deduplicate, score by keyword relevance, filter moderation
+      const seen = new Set();
+      allPosts = allPosts
+        .filter(p => { if(seen.has(p.id)) return false; seen.add(p.id); return true; })
+        .filter(p => moderatePost(p.title, p.selftext || '') !== 'block')
+        .map(p => {
+          // Score by how many extracted keywords appear in title/body
+          const text = (p.title + ' ' + (p.selftext || '')).toLowerCase();
+          const kwHits = extractedKeywords.filter(kw => text.includes(kw)).length;
+          return { ...p, kwHits };
+        })
+        .sort((a, b) => b.kwHits - a.kwHits || b.score - a.score)
+        .slice(0, 8);
+
+      renderIdeaLocalsPanel(id, allPosts, extractedKeywords, concept);
+    } catch(e) {
+      if(localsPanel) localsPanel.innerHTML = `<div class="locals-empty" style="color:var(--text3);font-size:11px;">Could not reach community sources right now. The analysis above is based on neighborhood data.</div>`;
+    }
+  }
+}
+
+function renderIdeaLocalsPanel(id, posts, keywords, concept) {
+  const panel = document.getElementById(`locals-panel-${id}`);
+  if(!panel) return;
+
+  // Sentiment classification based on keyword context
+  function classifyPost(post) {
+    const text = (post.title + ' ' + (post.selftext || '')).toLowerCase();
+    const positiveSignals = ['love','great','best','amazing','need','want','wish','would go','looking for','recommend','miss','finally','yes please','excited'];
+    const cautionSignals = ['bad','closed','gone','failed','never','waste','avoid','disappointed','overpriced','parking','too far','already have'];
+    const positiveScore = positiveSignals.filter(s => text.includes(s)).length;
+    const cautionScore = cautionSignals.filter(s => text.includes(s)).length;
+    if(positiveScore > cautionScore) return 'positive';
+    if(cautionScore > positiveScore) return 'caution';
+    return 'gap';
+  }
+
+  const sentimentConfig = {
+    positive: { label: 'Positive Signal', color: 'var(--accent)', bg: 'rgba(0,212,170,.08)', border: 'rgba(0,212,170,.2)', lineColor: 'var(--accent)' },
+    caution:  { label: 'Caution Signal',  color: 'var(--warn)',   bg: 'rgba(245,166,35,.07)', border: 'rgba(245,166,35,.18)', lineColor: 'var(--warn)' },
+    gap:      { label: 'Gap Signal',      color: 'var(--accent2)',bg: 'rgba(0,153,255,.07)', border: 'rgba(0,153,255,.18)', lineColor: 'var(--accent2)' }
+  };
+
+  if(posts.length === 0) {
+    panel.innerHTML = `<div class="locals-empty" style="color:var(--text3);font-size:11px;">No community posts matched this concept. Try a broader idea or different keywords.</div>`;
+    return;
+  }
+
+  const kwLabel = keywords.slice(0, 5).join(' · ');
+  let html = `<div style="font-size:9px;color:var(--text3);letter-spacing:.5px;margin-bottom:10px;text-transform:uppercase;">Scanning for: ${escapeHtml(kwLabel)}</div>`;
+
+  posts.forEach(p => {
+    const sentiment = classifyPost(p);
+    const cfg = sentimentConfig[sentiment];
+    const age = timeAgo(p.created_utc);
+    const snippet = p.selftext ? p.selftext.replace(/\n+/g, ' ').substring(0, 160) + (p.selftext.length > 160 ? '...' : '') : '';
+    const url = `https://reddit.com${p.permalink}`;
+
+    html += `
+      <div class="local-quote" style="cursor:pointer;" onclick="window.open('${escapeAttr(url)}','_blank')">
+        <div class="local-quote-bar">
+          <div class="local-quote-line" style="background:${cfg.lineColor};"></div>
+          <div class="local-quote-body" style="flex:1;">
+            <div class="local-quote-text">${escapeHtml(p.title)}</div>
+            ${snippet ? `<div style="font-size:10px;color:var(--text3);margin-top:3px;line-height:1.4;font-style:italic;">${escapeHtml(snippet)}</div>` : ''}
+            <div style="display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap;">
+              <span style="font-size:9px;color:#ff4500;">r/${p.sub}</span>
+              <span style="font-size:9px;color:var(--text3);">↑${p.score > 999 ? (p.score/1000).toFixed(1)+'k' : p.score}</span>
+              <span style="font-size:9px;color:var(--text3);">${age}</span>
+              <span style="font-size:9px;padding:1px 6px;border-radius:3px;background:${cfg.bg};border:1px solid ${cfg.border};color:${cfg.color};">${cfg.label}</span>
+              <span style="font-size:9px;color:var(--accent2);margin-left:auto;">↗ View thread</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  panel.innerHTML = html;
 }
 
 // =============================================
