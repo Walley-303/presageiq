@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Presage Audit — Internal Tool · Towns & Walley Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#080b10;--bg2:#0d1117;--bg3:#131920;--bg4:#1a2230;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);
+  --text:#eef1f4;--text2:#8a9aaa;--text3:#3d5060;
+  --gold:#c8963e;--gold2:#e8b86d;
+  --teal:#52c5b0;--purple:#a78bfa;--danger:#f85149;--warn:#e3b341;
+  --font-display:'Syne',sans-serif;--font-mono:'DM Mono',monospace;
+}
+*{scrollbar-width:thin;scrollbar-color:var(--border2) transparent;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-mono);font-size:13px;display:flex;flex-direction:column;}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:.4;}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;gap:16px;padding:0 20px;height:50px;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border);position:relative;}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--gold),transparent 60%);}
+.logo{font-family:var(--font-display);font-size:14px;font-weight:800;}
+.logo span{color:var(--gold);}
+.tool-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-left:4px;}
+.client-pill{background:rgba(200,150,62,.1);border:1px solid rgba(200,150,62,.25);color:var(--gold);font-size:10px;padding:3px 10px;border-radius:3px;letter-spacing:.5px;cursor:pointer;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.export-btn{background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 12px;border-radius:3px;font-family:var(--font-mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+.export-btn:hover{border-color:var(--gold);color:var(--gold);}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-shadow:0 0 8px var(--teal);}
+
+/* LAYOUT */
+.main{display:flex;flex:1;overflow:hidden;}
+
+/* SIDEBAR — MODULES */
+.sidebar{width:200px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.sidebar-head{padding:14px 14px 10px;border-bottom:1px solid var(--border);}
+.sidebar-head-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);}
+.module-nav{padding:8px;}
+.mnav-item{padding:9px 10px;border-radius:4px;cursor:pointer;transition:all .2s;border:1px solid transparent;margin-bottom:2px;display:flex;align-items:center;gap:8px;}
+.mnav-item:hover{background:var(--bg3);}
+.mnav-item.active{background:rgba(200,150,62,.07);border-color:rgba(200,150,62,.2);}
+.mnav-icon{font-size:12px;flex-shrink:0;width:16px;}
+.mnav-label{font-size:11px;color:var(--text2);}
+.mnav-item.active .mnav-label{color:var(--gold);}
+.mnav-check{margin-left:auto;font-size:9px;color:var(--teal);opacity:0;}
+.mnav-item.done .mnav-check{opacity:1;}
+.sidebar-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border);}
+.progress-label{font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.progress-bar{height:3px;background:var(--bg4);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--teal));border-radius:2px;transition:width .4s ease;}
+.progress-pct{font-size:10px;color:var(--text2);margin-top:5px;}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
+.panel{display:none;flex:1;flex-direction:column;}
+.panel.active{display:flex;}
+.panel-head{padding:20px 24px 16px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2);}
+.panel-title{font-family:var(--font-display);font-size:18px;font-weight:800;letter-spacing:-0.5px;margin-bottom:4px;}
+.panel-desc{font-size:11px;color:var(--text2);line-height:1.5;}
+.panel-body{padding:20px 24px;flex:1;overflow-y:auto;}
+
+/* SHARED FORM */
+.field-group{margin-bottom:20px;}
+.field-group-title{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.field-group-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.field-row.three{grid-template-columns:1fr 1fr 1fr;}
+.field-row.one{grid-template-columns:1fr;}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);}
+.fi,.fs,.fta{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:3px;font-family:var(--font-mono);font-size:12px;outline:none;transition:border .2s;width:100%;}
+.fi:focus,.fs:focus,.fta:focus{border-color:var(--gold);}
+.fi::placeholder,.fta::placeholder{color:var(--text3);}
+.fs{appearance:none;cursor:pointer;}
+.fs option{background:var(--bg3);}
+.fta{resize:vertical;min-height:80px;line-height:1.6;}
+
+/* MENU ITEMS */
+.menu-items{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.menu-item-row{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:10px 12px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;align-items:center;}
+.menu-item-row:hover{border-color:var(--border2);}
+.mi-name{font-size:12px;color:var(--text);}
+.mi-stat{font-size:11px;text-align:center;}
+.mi-badge{font-size:9px;padding:2px 7px;border-radius:2px;text-align:center;letter-spacing:.5px;}
+.mi-star{background:rgba(200,150,62,.1);color:var(--gold);border:1px solid rgba(200,150,62,.2);}
+.mi-ok{background:rgba(82,197,176,.08);color:var(--teal);border:1px solid rgba(82,197,176,.18);}
+.mi-poor{background:rgba(248,81,73,.08);color:var(--danger);border:1px solid rgba(248,81,73,.18);}
+.mi-del{background:transparent;border:1px solid var(--border);color:var(--text3);width:22px;height:22px;border-radius:3px;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+.mi-del:hover{border-color:var(--danger);color:var(--danger);}
+.add-btn{background:transparent;border:1px solid var(--border2);color:var(--text2);padding:7px 14px;border-radius:3px;font-family:var(--font-mono);font-size:10px;letter-spacing:.5px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;}
+.add-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* VENDOR TABLE */
+.vendor-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.vendor-row{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:10px 12px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;align-items:center;}
+.vendor-row:hover{border-color:var(--border2);}
+
+/* AI RESULT CARDS */
+.ai-result{background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:16px;margin-top:16px;font-size:12px;color:var(--text2);line-height:1.75;display:none;}
+.ai-result.visible{display:block;}
+.ai-result-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.ai-result-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--teal);}
+.ai-result strong{color:var(--text);}
+.run-btn{background:var(--gold);border:none;color:#080b10;padding:8px 18px;border-radius:3px;font-family:var(--font-mono);font-size:10px;font-weight:500;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:opacity .2s;display:flex;align-items:center;gap:6px;}
+.run-btn:hover{opacity:.85;}
+.run-btn:disabled{opacity:.4;cursor:not-allowed;}
+.run-btn.teal{background:var(--teal);}
+.run-btn.purple{background:var(--purple);}
+
+/* SIGNAL TAGS */
+.signal-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.stag-item{font-size:10px;padding:3px 9px;border-radius:3px;}
+.stag-pos{background:rgba(82,197,176,.1);color:var(--teal);border:1px solid rgba(82,197,176,.2);}
+.stag-neg{background:rgba(248,81,73,.08);color:var(--danger);border:1px solid rgba(248,81,73,.18);}
+.stag-opp{background:rgba(200,150,62,.1);color:var(--gold);border:1px solid rgba(200,150,62,.2);}
+
+/* BRIEF BUILDER */
+.brief-section{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:16px;margin-bottom:12px;}
+.brief-section-title{font-family:var(--font-display);font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.brief-content{font-size:12px;color:var(--text2);line-height:1.75;white-space:pre-wrap;}
+
+/* TYPING */
+@keyframes typing{0%,100%{opacity:.3;}50%{opacity:1;}}
+.dot-t{width:4px;height:4px;border-radius:50%;background:var(--gold);animation:typing .8s infinite;display:inline-block;}
+.dot-t:nth-child(2){animation-delay:.15s;}
+.dot-t:nth-child(3){animation-delay:.3s;}
+.typing-row{display:flex;gap:4px;align-items:center;padding:4px 0;}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div><div class="logo">Presage<span>IQ</span></div></div>
+  <span class="tool-label">Audit Tool · Internal</span>
+  <div class="client-pill" id="client-name-pill" onclick="editClient()">◎ No Client Loaded</div>
+  <div class="topbar-right">
+    <div class="status-dot"></div>
+    <span style="font-size:10px;color:var(--text2);letter-spacing:.5px;">AI Active · Proxy</span>
+    <button class="export-btn" onclick="buildBrief()">◎ Generate Presage Brief</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- MODULE NAV -->
+  <div class="sidebar">
+    <div class="sidebar-head"><div class="sidebar-head-label">Audit Modules</div></div>
+    <div class="module-nav">
+      <div class="mnav-item active" onclick="showPanel('setup')" id="nav-setup">
+        <span class="mnav-icon">◎</span><span class="mnav-label">Client Setup</span><span class="mnav-check">✓</span>
+      </div>
+      <div class="mnav-item" onclick="showPanel('menu')" id="nav-menu">
+        <span class="mnav-icon">▤</span><span class="mnav-label">Menu Analysis</span><span class="mnav-check">✓</span>
+      </div>
+      <div class="mnav-item" onclick="showPanel('reviews')" id="nav-reviews">
+        <span class="mnav-icon">◉</span><span class="mnav-label">Review Signals</span><span class="mnav-check">✓</span>
+      </div>
+      <div class="mnav-item" onclick="showPanel('inventory')" id="nav-inventory">
+        <span class="mnav-icon">▦</span><span class="mnav-label">Inventory &amp; Supply</span><span class="mnav-check">✓</span>
+      </div>
+      <div class="mnav-item" onclick="showPanel('competitors')" id="nav-competitors">
+        <span class="mnav-icon">◈</span><span class="mnav-label">Competitors</span><span class="mnav-check">✓</span>
+      </div>
+      <div class="mnav-item" onclick="showPanel('brief')" id="nav-brief">
+        <span class="mnav-icon">▸</span><span class="mnav-label">Presage Brief</span><span class="mnav-check">✓</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="progress-label">Session Progress</div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:16%"></div></div>
+      <div class="progress-pct" id="progress-pct">1 / 6 modules</div>
+    </div>
+  </div>
+
+  <!-- PANELS -->
+  <div class="content">
+
+    <!-- 01 CLIENT SETUP -->
+    <div class="panel active" id="panel-setup">
+      <div class="panel-head">
+        <div class="panel-title">Client Setup</div>
+        <div class="panel-desc">Enter client and business details before starting the audit. This context loads into every AI analysis.</div>
+      </div>
+      <div class="panel-body">
+        <div class="field-group">
+          <div class="field-group-title">Client Information</div>
+          <div class="field-row">
+            <div class="field"><label>Client Name</label><input class="fi" id="s-client" placeholder="Full name or business contact" oninput="updateClientPill()"/></div>
+            <div class="field"><label>Business Name</label><input class="fi" id="s-biz" placeholder="Restaurant / business name"/></div>
+          </div>
+          <div class="field-row three">
+            <div class="field"><label>Business Type</label>
+              <select class="fs" id="s-type">
+                <option value="">— Select —</option>
+                <option>Restaurant / Food & Beverage</option>
+                <option>Retail</option>
+                <option>Service Business</option>
+                <option>Bar / Nightlife</option>
+                <option>Café / Coffee</option>
+                <option>Food Truck / Pop-Up</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="field"><label>Neighborhood</label>
+              <select class="fs" id="s-nbhd">
+                <option value="">— Select —</option>
+                <option>Waldo</option><option>Crossroads Arts District</option><option>Brookside</option>
+                <option>Westport</option><option>River Market</option><option>Plaza / Midtown</option>
+                <option>Hyde Park</option><option>Volker</option><option>Martin City</option>
+                <option>Grandview</option><option>East Side / Prospect</option>
+                <option>KCK / Wyandotte County</option><option>Argentine / Rosedale</option>
+                <option>North KC</option><option>Gladstone</option><option>Independence</option>
+                <option>Lee's Summit</option><option>Overland Park</option><option>Other</option>
+              </select>
+            </div>
+            <div class="field"><label>Years in Business</label><input class="fi" id="s-years" placeholder="e.g. 3"/></div>
+          </div>
+          <div class="field-row three">
+            <div class="field"><label>Est. Annual Revenue</label><input class="fi" id="s-revenue" placeholder="e.g. $400,000"/></div>
+            <div class="field"><label>Avg Check / Transaction</label><input class="fi" id="s-check" placeholder="e.g. $22"/></div>
+            <div class="field"><label>Seating / Sq Ft</label><input class="fi" id="s-size" placeholder="e.g. 65 seats"/></div>
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field-group-title">Client's Stated Challenge</div>
+          <div class="field-row one">
+            <div class="field"><label>What problem are they trying to solve?</label>
+              <textarea class="fta" id="s-challenge" placeholder="What did they tell you when they reached out? What are they struggling with? What do they hope changes?"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field-group-title">Pre-Audit Notes</div>
+          <div class="field-row one">
+            <div class="field"><label>Any additional context before the session</label>
+              <textarea class="fta" id="s-notes" placeholder="Pre-call notes, files received, first impressions, anything worth flagging..."></textarea>
+            </div>
+          </div>
+        </div>
+        <button class="run-btn" onclick="markDone('setup');showPanel('menu')">Save &amp; Start Audit →</button>
+      </div>
+    </div>
+
+    <!-- 02 MENU ANALYSIS -->
+    <div class="panel" id="panel-menu">
+      <div class="panel-head">
+        <div class="panel-title">Menu &amp; Product Analysis</div>
+        <div class="panel-desc">Enter menu items with performance indicators. Run AI analysis to score items, identify stars and underperformers, and surface launch opportunities.</div>
+      </div>
+      <div class="panel-body">
+        <div class="field-group">
+          <div class="field-group-title">Menu Items</div>
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;margin-bottom:6px;padding:0 4px;">
+            <span style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;">Item Name</span>
+            <span style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;text-align:center;">Price</span>
+            <span style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;text-align:center;">Sales Vol</span>
+            <span style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;text-align:center;">Review Mentions</span>
+            <span></span>
+          </div>
+          <div class="menu-items" id="menu-items-list"></div>
+          <button class="add-btn" onclick="addMenuItem()">+ Add Item</button>
+        </div>
+
+        <div class="field-group">
+          <div class="field-group-title">Additional Context</div>
+          <div class="field-row">
+            <div class="field"><label>Menu highlights (owner's view)</label><textarea class="fta" id="m-highlights" placeholder="What does the owner think their best items are?" style="min-height:60px;"></textarea></div>
+            <div class="field"><label>Known weak spots</label><textarea class="fta" id="m-weak" placeholder="Items they're unsure about, complaints they've heard..." style="min-height:60px;"></textarea></div>
+          </div>
+          <div class="field-row one">
+            <div class="field"><label>Pasted reviews mentioning specific items (optional)</label>
+              <textarea class="fta" id="m-reviews" placeholder="Paste any Google, Yelp, or social reviews that mention menu items — PresageIQ will extract item-level signals..." style="min-height:80px;"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <button class="run-btn" id="menu-run-btn" onclick="analyzeMenu()">◎ Run Menu Analysis</button>
+          <button class="run-btn teal" id="menu-reddit-btn" onclick="scanMenuReddit()">◎ Scan Community for Item Signals</button>
+        </div>
+
+        <div class="ai-result" id="menu-result">
+          <div class="ai-result-header"><span class="ai-result-label">◎ Menu Analysis — PresageIQ</span></div>
+          <div id="menu-result-body"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 REVIEW SIGNALS -->
+    <div class="panel" id="panel-reviews">
+      <div class="panel-head">
+        <div class="panel-title">Review Signal Extraction</div>
+        <div class="panel-desc">Paste raw reviews from any source. PresageIQ extracts what customers love, what they complain about, and what they're asking for that doesn't exist yet.</div>
+      </div>
+      <div class="panel-body">
+        <div class="field-group">
+          <div class="field-group-title">Paste Reviews</div>
+          <div class="field-row one">
+            <div class="field"><label>Google Reviews</label><textarea class="fta" id="r-google" placeholder="Paste Google reviews here — copy/paste from Google Maps or your GMB dashboard..." style="min-height:100px;"></textarea></div>
+          </div>
+          <div class="field-row one">
+            <div class="field"><label>Yelp Reviews</label><textarea class="fta" id="r-yelp" placeholder="Paste Yelp reviews here..." style="min-height:80px;"></textarea></div>
+          </div>
+          <div class="field-row one">
+            <div class="field"><label>Social / Other (Facebook, Nextdoor, TikTok comments, etc.)</label><textarea class="fta" id="r-social" placeholder="Paste any other community content here..." style="min-height:80px;"></textarea></div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <button class="run-btn" id="review-run-btn" onclick="analyzeReviews()">◎ Extract Review Signals</button>
+          <button class="run-btn teal" id="review-reddit-btn" onclick="scanRedditReviews()">◎ Scan Reddit for Mentions</button>
+        </div>
+
+        <div class="ai-result" id="review-result">
+          <div class="ai-result-header"><span class="ai-result-label">◎ Review Signals — PresageIQ</span></div>
+          <div id="review-result-body"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 04 INVENTORY & SUPPLY -->
+    <div class="panel" id="panel-inventory">
+      <div class="panel-head">
+        <div class="panel-title">Inventory &amp; Supply Chain</div>
+        <div class="panel-desc">Document current vendors and sourcing. PresageIQ identifies consolidation opportunities, pricing misalignment, and local KC sourcing alternatives.</div>
+      </div>
+      <div class="panel-body">
+        <div class="field-group">
+          <div class="field-group-title">Current Vendors</div>
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;margin-bottom:6px;padding:0 4px;">
+            <span style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;">Vendor / Supplier</span>
+            <span style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;text-align:center;">Category</span>
+            <span style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;text-align:center;">Est. Monthly $</span>
+            <span style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;text-align:center;">Local?</span>
+            <span></span>
+          </div>
+          <div class="vendor-rows" id="vendor-list"></div>
+          <button class="add-btn" onclick="addVendor()">+ Add Vendor</button>
+        </div>
+
+        <div class="field-group">
+          <div class="field-group-title">Supply Chain Context</div>
+          <div class="field-row">
+            <div class="field"><label>Known sourcing problems</label><textarea class="fta" id="inv-problems" placeholder="Late deliveries, quality issues, price increases..." style="min-height:60px;"></textarea></div>
+            <div class="field"><label>Items they wish they could source better</label><textarea class="fta" id="inv-wish" placeholder="Produce quality, specific proteins, local options they've considered..." style="min-height:60px;"></textarea></div>
+          </div>
+        </div>
+
+        <button class="run-btn" id="inv-run-btn" onclick="analyzeInventory()">◎ Analyze Supply Chain</button>
+
+        <div class="ai-result" id="inv-result">
+          <div class="ai-result-header"><span class="ai-result-label">◎ Supply Chain Analysis — PresageIQ</span></div>
+          <div id="inv-result-body"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 COMPETITORS -->
+    <div class="panel" id="panel-competitors">
+      <div class="panel-head">
+        <div class="panel-title">Competitor Gap Analysis</div>
+        <div class="panel-desc">Map the competitive landscape. PresageIQ identifies what competitors are winning on, what they're leaving open, and where to compete or differentiate.</div>
+      </div>
+      <div class="panel-body">
+        <div class="field-group">
+          <div class="field-group-title">Key Competitors</div>
+          <div class="field-row one">
+            <div class="field"><label>List main competitors (name, type, proximity)</label>
+              <textarea class="fta" id="comp-list" placeholder="e.g.&#10;1. The Farmhouse — farm-to-table, 3 blocks away&#10;2. Bella Napoli — Italian, same street&#10;3. Local brewpub — casual dining, competing for same demographic..." style="min-height:100px;"></textarea>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>What are competitors winning on?</label><textarea class="fta" id="comp-wins" placeholder="What's drawing customers to them? Better ambiance, specific dish, price, loyalty?" style="min-height:70px;"></textarea></div>
+            <div class="field"><label>What are competitors NOT doing well?</label><textarea class="fta" id="comp-gaps" placeholder="Complaints you've seen in their reviews, gaps in their menu or service..." style="min-height:70px;"></textarea></div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <button class="run-btn" id="comp-run-btn" onclick="analyzeCompetitors()">◎ Run Competitor Analysis</button>
+          <button class="run-btn teal" id="comp-reddit-btn" onclick="scanCompetitorReddit()">◎ Scan Reddit for Competitor Mentions</button>
+        </div>
+
+        <div class="ai-result" id="comp-result">
+          <div class="ai-result-header"><span class="ai-result-label">◎ Competitor Analysis — PresageIQ</span></div>
+          <div id="comp-result-body"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 06 PRESAGE BRIEF -->
+    <div class="panel" id="panel-brief">
+      <div class="panel-head">
+        <div class="panel-title">Presage Brief Extended</div>
+        <div class="panel-desc">Generate the full written audit report. Synthesizes all module findings into a structured deliverable ready to send to the client.</div>
+      </div>
+      <div class="panel-body">
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
+          <button class="run-btn purple" id="brief-run-btn" onclick="generateBrief()">◎ Generate Full Presage Brief</button>
+          <button class="run-btn" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2);" onclick="copyBrief()">Copy to Clipboard</button>
+        </div>
+        <div id="brief-output">
+          <div style="font-size:11px;color:var(--text3);padding:20px 0;line-height:1.8;">Complete all audit modules first, then generate the Presage Brief. The report synthesizes findings from menu analysis, review signals, supply chain, and competitor data into a structured client deliverable.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// =============================================
+// CONFIG
+// =============================================
+const PROXY_URL = 'https://presageiq-backend.vercel.app/api/chat';
+const moduleOrder = ['setup','menu','reviews','inventory','competitors','brief'];
+const moduleDone = { setup:false, menu:false, reviews:false, inventory:false, competitors:false, brief:false };
+
+// =============================================
+// AI CALL
+// =============================================
+async function callAI(payload) {
+  const resp = await fetch(PROXY_URL, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+  });
+  if(!resp.ok) throw new Error('AI call failed');
+  return resp.json();
+}
+
+// =============================================
+// NAVIGATION
+// =============================================
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.mnav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.getElementById('nav-'+id).classList.add('active');
+}
+
+function markDone(id) {
+  moduleDone[id] = true;
+  document.getElementById('nav-'+id).classList.add('done');
+  updateProgress();
+}
+
+function updateProgress() {
+  const done = Object.values(moduleDone).filter(Boolean).length;
+  const total = moduleOrder.length;
+  const pct = Math.round((done/total)*100);
+  document.getElementById('progress-fill').style.width = pct+'%';
+  document.getElementById('progress-pct').textContent = `${done} / ${total} modules`;
+}
+
+function updateClientPill() {
+  const name = document.getElementById('s-biz').value.trim() || document.getElementById('s-client').value.trim();
+  document.getElementById('client-name-pill').textContent = name ? `◎ ${name}` : '◎ No Client Loaded';
+}
+
+function editClient() { showPanel('setup'); }
+
+// =============================================
+// MENU ITEMS
+// =============================================
+let menuItems = [];
+let vendorItems = [];
+
+function addMenuItem(name='',price='',vol='',mentions='') {
+  const id = Date.now();
+  menuItems.push({id, name, price, vol, mentions});
+  renderMenuItems();
+}
+
+function removeMenuItem(id) {
+  menuItems = menuItems.filter(m => m.id !== id);
+  renderMenuItems();
+}
+
+function renderMenuItems() {
+  const list = document.getElementById('menu-items-list');
+  if(menuItems.length === 0) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:8px 4px;">No items added yet — click + Add Item below.</div>';
+    return;
+  }
+  list.innerHTML = menuItems.map(m => `
+    <div class="menu-item-row">
+      <input class="fi" style="font-size:12px;" value="${escHtml(m.name)}" placeholder="Item name" oninput="updateMenuItem(${m.id},'name',this.value)"/>
+      <input class="fi" style="font-size:12px;text-align:center;" value="${escHtml(m.price)}" placeholder="$0" oninput="updateMenuItem(${m.id},'price',this.value)"/>
+      <select class="fs" style="font-size:11px;" onchange="updateMenuItem(${m.id},'vol',this.value)">
+        <option value="">Vol</option>
+        <option ${m.vol==='high'?'selected':''} value="high">High</option>
+        <option ${m.vol==='med'?'selected':''} value="med">Medium</option>
+        <option ${m.vol==='low'?'selected':''} value="low">Low</option>
+      </select>
+      <select class="fs" style="font-size:11px;" onchange="updateMenuItem(${m.id},'mentions',this.value)">
+        <option value="">Mentions</option>
+        <option ${m.mentions==='praised'?'selected':''} value="praised">Praised</option>
+        <option ${m.mentions==='neutral'?'selected':''} value="neutral">Neutral</option>
+        <option ${m.mentions==='complained'?'selected':''} value="complained">Complained</option>
+        <option ${m.mentions==='none'?'selected':''} value="none">Not mentioned</option>
+      </select>
+      <button class="mi-del" onclick="removeMenuItem(${m.id})">✕</button>
+    </div>`).join('');
+}
+
+function updateMenuItem(id, field, val) {
+  const item = menuItems.find(m => m.id === id);
+  if(item) item[field] = val;
+}
+
+// =============================================
+// VENDORS
+// =============================================
+function addVendor() {
+  const id = Date.now();
+  vendorItems.push({id, name:'', cat:'', spend:'', local:''});
+  renderVendors();
+}
+
+function removeVendor(id) {
+  vendorItems = vendorItems.filter(v => v.id !== id);
+  renderVendors();
+}
+
+function renderVendors() {
+  const list = document.getElementById('vendor-list');
+  if(vendorItems.length === 0) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:8px 4px;">No vendors added yet.</div>';
+    return;
+  }
+  list.innerHTML = vendorItems.map(v => `
+    <div class="vendor-row">
+      <input class="fi" style="font-size:12px;" value="${escHtml(v.name)}" placeholder="Vendor name" oninput="updateVendor(${v.id},'name',this.value)"/>
+      <input class="fi" style="font-size:12px;" value="${escHtml(v.cat)}" placeholder="Produce, meat..." oninput="updateVendor(${v.id},'cat',this.value)"/>
+      <input class="fi" style="font-size:12px;text-align:center;" value="${escHtml(v.spend)}" placeholder="$0/mo" oninput="updateVendor(${v.id},'spend',this.value)"/>
+      <select class="fs" style="font-size:11px;" onchange="updateVendor(${v.id},'local',this.value)">
+        <option value="">Local?</option>
+        <option ${v.local==='yes'?'selected':''} value="yes">Yes — KC/Region</option>
+        <option ${v.local==='no'?'selected':''} value="no">No — National</option>
+        <option ${v.local==='unknown'?'selected':''} value="unknown">Unknown</option>
+      </select>
+      <button class="mi-del" onclick="removeVendor(${v.id})">✕</button>
+    </div>`).join('');
+}
+
+function updateVendor(id, field, val) {
+  const v = vendorItems.find(x => x.id === id);
+  if(v) v[field] = val;
+}
+
+// =============================================
+// GET CLIENT CONTEXT
+// =============================================
+function getClientContext() {
+  return `Business: ${document.getElementById('s-biz').value || 'Unknown'}
+Type: ${document.getElementById('s-type').value || 'Unknown'}
+Neighborhood: ${document.getElementById('s-nbhd').value || 'Unknown'}, Kansas City
+Years Operating: ${document.getElementById('s-years').value || 'Unknown'}
+Estimated Annual Revenue: ${document.getElementById('s-revenue').value || 'Unknown'}
+Average Check: ${document.getElementById('s-check').value || 'Unknown'}
+Size: ${document.getElementById('s-size').value || 'Unknown'}
+Client Challenge: ${document.getElementById('s-challenge').value || 'Not provided'}
+Pre-Audit Notes: ${document.getElementById('s-notes').value || 'None'}`;
+}
+
+// =============================================
+// AI ANALYSES
+// =============================================
+async function analyzeMenu() {
+  const btn = document.getElementById('menu-run-btn');
+  const result = document.getElementById('menu-result');
+  const body = document.getElementById('menu-result-body');
+  btn.disabled = true;
+  result.classList.add('visible');
+  body.innerHTML = '<div class="typing-row"><div class="dot-t"></div><div class="dot-t"></div><div class="dot-t"></div></div>';
+
+  const itemSummary = menuItems.length > 0
+    ? menuItems.map(m => `- ${m.name}: Price ${m.price}, Sales Volume ${m.vol||'unknown'}, Review Mentions ${m.mentions||'unknown'}`).join('\n')
+    : 'No items entered.';
+
+  try {
+    const data = await callAI({
+      model:'claude-sonnet-4-6', max_tokens:900,
+      system:`You are PresageIQ conducting a Presage Audit for an existing KC business. Be direct, specific, and actionable. No generic advice. Reference the actual items provided.`,
+      messages:[{role:'user', content:`CLIENT CONTEXT:\n${getClientContext()}\n\nMENU ITEMS:\n${itemSummary}\n\nOWNER'S VIEW OF HIGHLIGHTS: ${document.getElementById('m-highlights').value||'Not provided'}\nKNOWN WEAK SPOTS: ${document.getElementById('m-weak').value||'Not provided'}\nPASTED REVIEWS: ${document.getElementById('m-reviews').value||'None provided'}\n\nAnalyze this menu. Structure:\n**STAR ITEMS** — what's working and should be featured more prominently\n**UNDERPERFORMERS** — items to fix, relaunch, or cut (be specific: which ones and why)\n**MISSING FROM MENU** — gaps based on reviews and neighborhood context\n**MARKETING PRIORITY** — the single highest-leverage change (what to push in ads/signage)\n**LAUNCH OPPORTUNITY** — one new item concept that fits this menu and fills a documented gap`}]
+    });
+    const text = data.content?.[0]?.text || '';
+    body.innerHTML = text.replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--text);">$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+    markDone('menu');
+  } catch(e) { body.innerHTML = '<span style="color:var(--danger);">Analysis failed — check connection and try again.</span>'; }
+  btn.disabled = false;
+}
+
+async function scanMenuReddit() {
+  const btn = document.getElementById('menu-reddit-btn');
+  const result = document.getElementById('menu-result');
+  const body = document.getElementById('menu-result-body');
+  btn.disabled = true;
+  result.classList.add('visible');
+  const biz = document.getElementById('s-biz').value.trim();
+  const nbhd = document.getElementById('s-nbhd').value;
+  if(!biz) { body.innerHTML = '<span style="color:var(--warn);">Enter a business name in Client Setup first.</span>'; btn.disabled=false; return; }
+
+  body.innerHTML = `<div class="typing-row"><div class="dot-t"></div><div class="dot-t"></div><div class="dot-t"></div></div><span style="font-size:11px;color:var(--text3);margin-left:8px;">Scanning Reddit for mentions of ${biz}...</span>`;
+
+  const subs = ['kansascity','KCFoodScene'];
+  let allPosts = [];
+  for(const sub of subs) {
+    try {
+      const r = await fetch(`https://www.reddit.com/r/${sub}/search.json?q=${encodeURIComponent(biz + ' ' + nbhd)}&restrict_sr=1&sort=relevance&t=year&limit=10`,{headers:{'Accept':'application/json'}});
+      if(!r.ok) continue;
+      const d = await r.json();
+      (d?.data?.children||[]).forEach(c => allPosts.push({...c.data,sub}));
+    } catch(e){}
+  }
+  const seen = new Set();
+  allPosts = allPosts.filter(p=>{if(seen.has(p.id))return false;seen.add(p.id);return true;}).sort((a,b)=>b.score-a.score).slice(0,8);
+
+  if(allPosts.length === 0) {
+    body.innerHTML = `<span style="color:var(--text3);font-size:11px;">No Reddit posts found for "${biz}". Try searching manually on <a href="https://reddit.com/r/KCFoodScene" target="_blank" style="color:var(--teal);">r/KCFoodScene</a>.</span>`;
+  } else {
+    body.innerHTML = `<div style="font-size:10px;color:var(--text3);margin-bottom:10px;letter-spacing:.5px;">${allPosts.length} Reddit posts found for "${biz}"</div>` +
+      allPosts.map(p=>{
+        const age = timeAgo(p.created_utc);
+        const snippet = p.selftext ? p.selftext.substring(0,180)+'...' : '';
+        return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:9px 11px;margin-bottom:6px;cursor:pointer;" onclick="window.open('https://reddit.com${p.permalink}','_blank')">
+          <div style="font-size:11px;color:var(--text);margin-bottom:4px;">${escHtml(p.title)}</div>
+          ${snippet?`<div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-style:italic;">${escHtml(snippet)}</div>`:''}
+          <div style="font-size:9px;color:var(--text3);display:flex;gap:8px;"><span style="color:#ff4500;">r/${p.sub}</span><span>↑${p.score}</span><span>${age}</span><span style="margin-left:auto;color:var(--teal);">↗ Open</span></div>
+        </div>`;
+      }).join('');
+  }
+  btn.disabled = false;
+}
+
+async function analyzeReviews() {
+  const btn = document.getElementById('review-run-btn');
+  const result = document.getElementById('review-result');
+  const body = document.getElementById('review-result-body');
+  btn.disabled = true; result.classList.add('visible');
+  body.innerHTML = '<div class="typing-row"><div class="dot-t"></div><div class="dot-t"></div><div class="dot-t"></div></div>';
+
+  const google = document.getElementById('r-google').value;
+  const yelp = document.getElementById('r-yelp').value;
+  const social = document.getElementById('r-social').value;
+  const allReviews = [google&&`GOOGLE REVIEWS:\n${google}`,yelp&&`YELP REVIEWS:\n${yelp}`,social&&`SOCIAL/OTHER:\n${social}`].filter(Boolean).join('\n\n');
+
+  if(!allReviews.trim()) { body.innerHTML='<span style="color:var(--warn);">Paste at least one source of reviews first.</span>'; btn.disabled=false; return; }
+
+  try {
+    const data = await callAI({
+      model:'claude-sonnet-4-6', max_tokens:900,
+      system:`You are PresageIQ extracting market intelligence from customer reviews for a KC business audit. Be specific — quote or closely paraphrase actual review content. Identify patterns, not just individual comments.`,
+      messages:[{role:'user',content:`CLIENT CONTEXT:\n${getClientContext()}\n\nREVIEW SOURCES:\n${allReviews}\n\nExtract intelligence. Structure:\n**WHAT CUSTOMERS LOVE** — specific items, experiences, or qualities mentioned positively (with frequency)\n**COMMON COMPLAINTS** — recurring issues (service, quality, price, parking, etc.)\n**UNMET REQUESTS** — what customers ask for that doesn't exist yet\n**ITEM-LEVEL SIGNALS** — any specific menu items praised or criticized\n**SENTIMENT SUMMARY** — overall brand health signal (1-2 sentences)\n**PRIORITY ACTION** — the single most impactful thing to fix or capitalize on based on these reviews`}]
+    });
+    const text = data.content?.[0]?.text || '';
+    body.innerHTML = text.replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--text);">$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+    markDone('reviews');
+  } catch(e) { body.innerHTML='<span style="color:var(--danger);">Analysis failed — try again.</span>'; }
+  btn.disabled = false;
+}
+
+async function scanRedditReviews() {
+  const btn = document.getElementById('review-reddit-btn');
+  const result = document.getElementById('review-result');
+  const body = document.getElementById('review-result-body');
+  btn.disabled = true; result.classList.add('visible');
+  const biz = document.getElementById('s-biz').value.trim();
+  if(!biz) { body.innerHTML='<span style="color:var(--warn);">Enter business name in Client Setup first.</span>'; btn.disabled=false; return; }
+  body.innerHTML=`<div class="typing-row"><div class="dot-t"></div><div class="dot-t"></div><div class="dot-t"></div></div>`;
+  await scanMenuReddit();
+  btn.disabled=false;
+}
+
+async function analyzeInventory() {
+  const btn = document.getElementById('inv-run-btn');
+  const result = document.getElementById('inv-result');
+  const body = document.getElementById('inv-result-body');
+  btn.disabled=true; result.classList.add('visible');
+  body.innerHTML='<div class="typing-row"><div class="dot-t"></div><div class="dot-t"></div><div class="dot-t"></div></div>';
+
+  const vendorSummary = vendorItems.length > 0
+    ? vendorItems.map(v=>`- ${v.name}: Category ${v.cat||'unknown'}, Est. ${v.spend||'unknown'}/mo, Local: ${v.local||'unknown'}`).join('\n')
+    : 'No vendors entered.';
+
+  try {
+    const data = await callAI({
+      model:'claude-sonnet-4-6', max_tokens:800,
+      system:`You are PresageIQ conducting a supply chain analysis for a KC business. Focus on consolidation opportunities, local sourcing in the KC/Missouri/Kansas region, and cost efficiency. Be specific and actionable.`,
+      messages:[{role:'user',content:`CLIENT CONTEXT:\n${getClientContext()}\n\nCURRENT VENDORS:\n${vendorSummary}\n\nSOURCING PROBLEMS: ${document.getElementById('inv-problems').value||'None noted'}\nSOURCING WISHLIST: ${document.getElementById('inv-wish').value||'None noted'}\n\nAnalyze this supply chain. Structure:\n**CONSOLIDATION OPPORTUNITIES** — vendors that can be merged or eliminated\n**PRICING FLAGS** — areas where they're likely overpaying\n**LOCAL SOURCING GAPS** — KC/regional alternatives worth exploring (be specific about KC-area options where you know them)\n**QUICK WINS** — 2-3 changes that reduce cost or improve quality with low friction\n**STRATEGIC SHIFT** — one bigger supply chain move that could meaningfully improve operations`}]
+    });
+    const text = data.content?.[0]?.text||'';
+    body.innerHTML = text.replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--text);">$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+    markDone('inventory');
+  } catch(e) { body.innerHTML='<span style="color:var(--danger);">Analysis failed — try again.</span>'; }
+  btn.disabled=false;
+}
+
+async function analyzeCompetitors() {
+  const btn = document.getElementById('comp-run-btn');
+  const result = document.getElementById('comp-result');
+  const body = document.getElementById('comp-result-body');
+  btn.disabled=true; result.classList.add('visible');
+  body.innerHTML='<div class="typing-row"><div class="dot-t"></div><div class="dot-t"></div><div class="dot-t"></div></div>';
+
+  try {
+    const data = await callAI({
+      model:'claude-sonnet-4-6', max_tokens:900,
+      system:`You are PresageIQ conducting a competitor gap analysis for a KC business audit. Be direct. The goal is to identify specific opportunities the client can act on — not general competitive awareness.`,
+      messages:[{role:'user',content:`CLIENT CONTEXT:\n${getClientContext()}\n\nCOMPETITORS:\n${document.getElementById('comp-list').value||'Not provided'}\n\nWHAT COMPETITORS WIN ON: ${document.getElementById('comp-wins').value||'Not provided'}\nCOMPETITOR WEAKNESSES: ${document.getElementById('comp-gaps').value||'Not provided'}\n\nAnalyze the competitive landscape. Structure:\n**WHAT THEY'RE LOSING TO COMPETITORS** — specific areas where competitors outperform them\n**GAPS COMPETITORS LEAVE OPEN** — what nobody in this market is doing well that this business could own\n**STEAL THIS** — one specific item, experience, or strategy a competitor is winning on that this business should adapt and make their version of\n**POSITIONING RECOMMENDATION** — how this business should position against the competitive set\n**HIGHEST LEVERAGE MOVE** — the single competitive action with the most upside`}]
+    });
+    const text = data.content?.[0]?.text||'';
+    body.innerHTML = text.replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--text);">$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+    markDone('competitors');
+  } catch(e) { body.innerHTML='<span style="color:var(--danger);">Analysis failed — try again.</span>'; }
+  btn.disabled=false;
+}
+
+async function scanCompetitorReddit() {
+  const btn = document.getElementById('comp-reddit-btn');
+  btn.disabled=true;
+  const compText = document.getElementById('comp-list').value;
+  const nbhd = document.getElementById('s-nbhd').value;
+  const firstComp = compText.split('\n')[0].replace(/^\d+\.\s*/,'').split('—')[0].trim();
+  if(!firstComp) { alert('Add at least one competitor first.'); btn.disabled=false; return; }
+  const result = document.getElementById('comp-result');
+  const body = document.getElementById('comp-result-body');
+  result.classList.add('visible');
+  body.innerHTML=`<div style="font-size:11px;color:var(--text3);">Scanning Reddit for competitor mentions...</div>`;
+  const subs=['kansascity','KCFoodScene'];
+  let allPosts=[];
+  for(const sub of subs){
+    try{
+      const r=await fetch(`https://www.reddit.com/r/${sub}/search.json?q=${encodeURIComponent(firstComp+' '+nbhd)}&restrict_sr=1&sort=relevance&t=year&limit=8`,{headers:{'Accept':'application/json'}});
+      if(!r.ok)continue;
+      const d=await r.json();
+      (d?.data?.children||[]).forEach(c=>allPosts.push({...c.data,sub}));
+    }catch(e){}
+  }
+  const seen=new Set();
+  allPosts=allPosts.filter(p=>{if(seen.has(p.id))return false;seen.add(p.id);return true;}).sort((a,b)=>b.score-a.score).slice(0,6);
+  if(allPosts.length===0){body.innerHTML=`<span style="color:var(--text3);font-size:11px;">No posts found for "${firstComp}".</span>`;}
+  else{
+    body.innerHTML=`<div style="font-size:10px;color:var(--text3);margin-bottom:8px;">Reddit mentions of "${firstComp}"</div>`+
+      allPosts.map(p=>`<div style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:8px 10px;margin-bottom:5px;cursor:pointer;" onclick="window.open('https://reddit.com${p.permalink}','_blank')">
+        <div style="font-size:11px;color:var(--text);margin-bottom:3px;">${escHtml(p.title)}</div>
+        <div style="font-size:9px;color:var(--text3);display:flex;gap:8px;"><span style="color:#ff4500;">r/${p.sub}</span><span>↑${p.score}</span><span style="margin-left:auto;color:var(--teal);">↗</span></div>
+      </div>`).join('');
+  }
+  btn.disabled=false;
+}
+
+// =============================================
+// GENERATE PRESAGE BRIEF
+// =============================================
+async function generateBrief() {
+  const btn = document.getElementById('brief-run-btn');
+  const output = document.getElementById('brief-output');
+  btn.disabled = true;
+  output.innerHTML = '<div style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:8px;padding:20px 0;"><div class="typing-row"><div class="dot-t"></div><div class="dot-t"></div><div class="dot-t"></div></div> Generating Presage Brief Extended...</div>';
+
+  const menuResult = document.getElementById('menu-result-body').innerText;
+  const reviewResult = document.getElementById('review-result-body').innerText;
+  const invResult = document.getElementById('inv-result-body').innerText;
+  const compResult = document.getElementById('comp-result-body').innerText;
+
+  try {
+    const data = await callAI({
+      model:'claude-sonnet-4-6', max_tokens:1500,
+      system:`You are PresageIQ writing a Presage Brief Extended — a professional business intelligence report delivered to a client after a full audit engagement. Write in a clear, authoritative, professional tone. This document will be sent directly to the client. Format it as a structured report. Use ** for bold headers.`,
+      messages:[{role:'user',content:`CLIENT CONTEXT:\n${getClientContext()}\n\nMENU ANALYSIS FINDINGS:\n${menuResult||'Not completed'}\n\nREVIEW SIGNAL FINDINGS:\n${reviewResult||'Not completed'}\n\nSUPPLY CHAIN FINDINGS:\n${invResult||'Not completed'}\n\nCOMPETITOR ANALYSIS FINDINGS:\n${compResult||'Not completed'}\n\nWrite the Presage Brief Extended. Structure:\n\n**PRESAGE BRIEF EXTENDED**\n**${document.getElementById('s-biz').value||'Client Business'} · ${document.getElementById('s-nbhd').value||'Kansas City'} · Towns & Walley Intelligence**\n\n**EXECUTIVE SUMMARY** (2-3 sentences — what is the overall state of this business and the single most important thing they need to do)\n\n**WHAT'S WORKING** (strengths to protect and amplify)\n\n**WHAT NEEDS TO CHANGE** (honest list of problems, prioritized by impact)\n\n**PRIORITY ACTION PLAN**\n— Immediate (next 30 days)\n— Medium-term (60-90 days)\n— Strategic (6-12 months)\n\n**MENU RECOMMENDATIONS** (specific item actions)\n\n**SUPPLY CHAIN RECOMMENDATIONS** (specific vendor/sourcing actions)\n\n**COMPETITIVE POSITIONING** (how to stand out)\n\n**CLOSING NOTE** (one paragraph of honest, direct encouragement — acknowledge the challenge, affirm the opportunity)\n\nBe specific. Reference actual data from the findings. This is a $2,500 deliverable — write accordingly.`}]
+    });
+    const text = data.content?.[0]?.text||'';
+    output.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:24px;font-size:12px;line-height:1.85;color:var(--text2);">${
+      text.replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--text);font-size:13px;">$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>')
+    }</div>`;
+    markDone('brief');
+  } catch(e) { output.innerHTML='<span style="color:var(--danger);">Brief generation failed — make sure all modules have been analyzed first.</span>'; }
+  btn.disabled=false;
+}
+
+function copyBrief() {
+  const text = document.getElementById('brief-output').innerText;
+  if(!text||text.includes('Complete all audit modules')) { alert('Generate the brief first.'); return; }
+  navigator.clipboard.writeText(text).then(()=>alert('Brief copied to clipboard.'));
+}
+
+function buildBrief() { showPanel('brief'); generateBrief(); }
+
+// =============================================
+// UTILS
+// =============================================
+function escHtml(str){if(!str)return'';return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function timeAgo(utc){const s=Math.floor(Date.now()/1000)-utc;if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
+
+// Init
+renderMenuItems();
+renderVendors();
+</script>
+</body>
+</html>
