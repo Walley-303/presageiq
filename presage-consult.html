@@ -688,11 +688,13 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
 });
 
 // Form submission
-function submitForm() {
+async function submitForm() {
   const name = document.getElementById('f-name').value.trim();
   const email = document.getElementById('f-email').value.trim();
   const concept = document.getElementById('f-concept').value.trim();
   const neighborhood = document.getElementById('f-neighborhood').value;
+  const message = document.getElementById('f-message').value.trim();
+  const btn = document.querySelector('.form-submit');
 
   if(!name || !email || !concept || !neighborhood) {
     alert('Please fill in your name, email, concept, and target neighborhood.');
@@ -703,16 +705,26 @@ function submitForm() {
     return;
   }
 
-  // Build mailto with form data
-  const subject = encodeURIComponent(`Presage Consult Request — ${concept} in ${neighborhood}`);
-  const body = encodeURIComponent(
-    `Name: ${name}\nEmail: ${email}\nConcept: ${concept}\nNeighborhood: ${neighborhood}\nMessage: ${document.getElementById('f-message').value.trim() || 'None provided'}`
-  );
-  window.location.href = `mailto:walley.research@gmail.com?subject=${subject}&body=${body}`;
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
 
-  // Show success state
-  document.getElementById('contact-form').style.display = 'none';
-  document.getElementById('form-success').style.display = 'block';
+  try {
+    const resp = await fetch('https://presageiq-backend.vercel.app/api/email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, concept, neighborhood, message })
+    });
+
+    if(!resp.ok) throw new Error('Server error');
+
+    document.getElementById('contact-form').style.display = 'none';
+    document.getElementById('form-success').style.display = 'block';
+
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Submit Request →';
+    alert('Something went wrong sending your request. Please email walley.research@gmail.com directly.');
+  }
 }
 
 // Intersection observer for scroll animations
