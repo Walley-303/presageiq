@@ -124,6 +124,35 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .brief-section-title{font-family:var(--font-display);font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
 .brief-content{font-size:12px;color:var(--text2);line-height:1.75;white-space:pre-wrap;}
 
+/* MODE BUTTONS */
+.mode-btn{flex:1;background:transparent;border:1px solid var(--border);color:var(--text3);padding:5px 8px;border-radius:3px;font-family:var(--font-mono);font-size:10px;letter-spacing:.5px;cursor:pointer;transition:all .2s;}
+.mode-btn.active{background:rgba(200,150,62,.1);border-color:rgba(200,150,62,.3);color:var(--gold);}
+.mode-btn:hover{border-color:var(--border2);color:var(--text2);}
+
+/* VIABILITY METER */
+.viability-meter{display:flex;align-items:center;gap:12px;margin:16px 0;}
+.vm-track{flex:1;height:8px;background:var(--bg4);border-radius:4px;overflow:hidden;}
+.vm-fill{height:100%;border-radius:4px;transition:width .6s ease;}
+.vm-label{font-size:11px;color:var(--text2);white-space:nowrap;}
+.vm-score{font-family:var(--font-display);font-size:20px;font-weight:800;color:var(--gold);}
+
+/* PROJECTION CARDS */
+.proj-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0;}
+.proj-card{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:14px;}
+.proj-card-label{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:6px;}
+.proj-card-value{font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--gold);margin-bottom:3px;}
+.proj-card-sub{font-size:10px;color:var(--text3);line-height:1.4;}
+
+/* FUNDING TAGS */
+.funding-item{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:12px 14px;margin-bottom:8px;}
+.funding-name{font-size:12px;color:var(--text);margin-bottom:3px;font-weight:500;}
+.funding-desc{font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:6px;}
+.funding-tags{display:flex;gap:5px;flex-wrap:wrap;}
+.ftag{font-size:9px;padding:2px 6px;border-radius:2px;}
+.ftag-vet{background:rgba(200,150,62,.1);color:var(--gold);border:1px solid rgba(200,150,62,.2);}
+.ftag-sb{background:rgba(82,197,176,.08);color:var(--teal);border:1px solid rgba(82,197,176,.18);}
+.ftag-kc{background:rgba(167,139,250,.08);color:var(--purple);border:1px solid rgba(167,139,250,.18);}
+
 /* TYPING */
 @keyframes typing{0%,100%{opacity:.3;}50%{opacity:1;}}
 .dot-t{width:4px;height:4px;border-radius:50%;background:var(--gold);animation:typing .8s infinite;display:inline-block;}
@@ -151,8 +180,15 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
   <!-- MODULE NAV -->
   <div class="sidebar">
-    <div class="sidebar-head"><div class="sidebar-head-label">Audit Modules</div></div>
-    <div class="module-nav">
+    <div class="sidebar-head">
+      <div class="sidebar-head-label">Mode</div>
+      <div style="display:flex;gap:4px;margin-top:8px;">
+        <button class="mode-btn active" id="mode-audit" onclick="setMode('audit')">Audit</button>
+        <button class="mode-btn" id="mode-consult" onclick="setMode('consult')">Consult</button>
+      </div>
+    </div>
+    <div class="module-nav" id="audit-nav">
+      <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);padding:4px 2px 6px;">Existing Business</div>
       <div class="mnav-item active" onclick="showPanel('setup')" id="nav-setup">
         <span class="mnav-icon">◎</span><span class="mnav-label">Client Setup</span><span class="mnav-check">✓</span>
       </div>
@@ -170,6 +206,27 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       </div>
       <div class="mnav-item" onclick="showPanel('brief')" id="nav-brief">
         <span class="mnav-icon">▸</span><span class="mnav-label">Presage Brief</span><span class="mnav-check">✓</span>
+      </div>
+    </div>
+    <div class="module-nav" id="consult-nav" style="display:none;">
+      <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);padding:4px 2px 6px;">Pre-Launch Concept</div>
+      <div class="mnav-item" onclick="showPanel('c-concept')" id="nav-c-concept">
+        <span class="mnav-icon">◎</span><span class="mnav-label">Concept Setup</span><span class="mnav-check">✓</span>
+      </div>
+      <div class="mnav-item" onclick="showPanel('c-market')" id="nav-c-market">
+        <span class="mnav-icon">◉</span><span class="mnav-label">Market Viability</span><span class="mnav-check">✓</span>
+      </div>
+      <div class="mnav-item" onclick="showPanel('c-community')" id="nav-c-community">
+        <span class="mnav-icon">▤</span><span class="mnav-label">Community Intel</span><span class="mnav-check">✓</span>
+      </div>
+      <div class="mnav-item" onclick="showPanel('c-financials')" id="nav-c-financials">
+        <span class="mnav-icon">▦</span><span class="mnav-label">Financial Projection</span><span class="mnav-check">✓</span>
+      </div>
+      <div class="mnav-item" onclick="showPanel('c-funding')" id="nav-c-funding">
+        <span class="mnav-icon">◈</span><span class="mnav-label">Funding Pathways</span><span class="mnav-check">✓</span>
+      </div>
+      <div class="mnav-item" onclick="showPanel('c-report')" id="nav-c-report">
+        <span class="mnav-icon">▸</span><span class="mnav-label">Consult Report</span><span class="mnav-check">✓</span>
       </div>
     </div>
     <div class="sidebar-footer">
@@ -407,6 +464,206 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
         </div>
         <div id="brief-output">
           <div style="font-size:11px;color:var(--text3);padding:20px 0;line-height:1.8;">Complete all audit modules first, then generate the Presage Brief. The report synthesizes findings from menu analysis, review signals, supply chain, and competitor data into a structured client deliverable.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONSULT: 01 CONCEPT SETUP -->
+    <div class="panel" id="panel-c-concept">
+      <div class="panel-head">
+        <div class="panel-title">Concept Setup</div>
+        <div class="panel-desc">Capture the client's business idea before testing it against market data. The more detail here, the sharper the analysis.</div>
+      </div>
+      <div class="panel-body">
+        <div class="field-group">
+          <div class="field-group-title">Client Information</div>
+          <div class="field-row">
+            <div class="field"><label>Client Name</label><input class="fi" id="cc-client" placeholder="Full name"/></div>
+            <div class="field"><label>Email</label><input class="fi" id="cc-email" placeholder="client@email.com"/></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Background</label>
+              <select class="fs" id="cc-background">
+                <option value="">— Select —</option>
+                <option>First-time entrepreneur</option>
+                <option>Industry experience, first business</option>
+                <option>Serial entrepreneur</option>
+                <option>Military veteran</option>
+                <option>Recent graduate</option>
+                <option>Career changer</option>
+              </select>
+            </div>
+            <div class="field"><label>Investment Range Available</label>
+              <select class="fs" id="cc-investment">
+                <option value="">— Select —</option>
+                <option>Under $25,000</option>
+                <option>$25,000 – $50,000</option>
+                <option>$50,000 – $100,000</option>
+                <option>$100,000 – $250,000</option>
+                <option>$250,000+</option>
+                <option>Seeking funding — minimal personal capital</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field-group-title">The Concept</div>
+          <div class="field-row three">
+            <div class="field"><label>Business Type</label>
+              <select class="fs" id="cc-type">
+                <option value="">— Select —</option>
+                <option>Restaurant / Food &amp; Beverage</option>
+                <option>Retail — Clothing / Apparel</option>
+                <option>Retail — Specialty / Boutique</option>
+                <option>Café / Coffee Shop</option>
+                <option>Bar / Taproom</option>
+                <option>Food Truck / Pop-Up</option>
+                <option>Service Business</option>
+                <option>Health / Wellness</option>
+                <option>Fitness / Studio</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="field"><label>Target Neighborhood</label>
+              <select class="fs" id="cc-nbhd">
+                <option value="">— Select —</option>
+                <option>Waldo</option><option>Crossroads Arts District</option><option>Brookside</option>
+                <option>Westport</option><option>River Market</option><option>Plaza / Midtown</option>
+                <option>Hyde Park</option><option>Volker</option><option>Martin City</option>
+                <option>Grandview</option><option>East Side / Prospect</option>
+                <option>KCK / Wyandotte County</option><option>Argentine / Rosedale</option>
+                <option>North KC</option><option>Gladstone</option><option>Independence</option>
+                <option>Lee's Summit</option><option>Overland Park</option><option>Other</option>
+              </select>
+            </div>
+            <div class="field"><label>Target Avg Transaction</label><input class="fi" id="cc-check" placeholder="e.g. $18"/></div>
+          </div>
+          <div class="field-row one">
+            <div class="field"><label>Describe the concept in detail</label>
+              <textarea class="fta" id="cc-concept" placeholder="What is the business? What makes it unique? Who is the target customer? What's the experience like? Be as specific as possible..." style="min-height:100px;"></textarea>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Why this neighborhood?</label><textarea class="fta" id="cc-why" placeholder="Personal connection, spotted a gap, foot traffic observation..." style="min-height:60px;"></textarea></div>
+            <div class="field"><label>Biggest concern?</label><textarea class="fta" id="cc-concern" placeholder="Competition, capital, experience, location..." style="min-height:60px;"></textarea></div>
+          </div>
+        </div>
+        <button class="run-btn" onclick="markConsultDone('c-concept');showPanel('c-market')">Save &amp; Run Market Analysis →</button>
+      </div>
+    </div>
+
+    <!-- CONSULT: 02 MARKET VIABILITY -->
+    <div class="panel" id="panel-c-market">
+      <div class="panel-head">
+        <div class="panel-title">Market Viability</div>
+        <div class="panel-desc">Tests the concept against PresageIQ neighborhood data — demand signals, saturation, demographic fit, and opportunity score.</div>
+      </div>
+      <div class="panel-body">
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+          <button class="run-btn" id="mkt-run-btn" onclick="runMarketAnalysis()">◎ Run Market Analysis</button>
+          <button class="run-btn teal" id="mkt-reddit-btn" onclick="runConceptReddit()">◎ Scan Community for Concept Signals</button>
+        </div>
+        <div class="ai-result visible" id="mkt-result" style="display:block;min-height:60px;">
+          <div class="ai-result-header"><span class="ai-result-label">◎ Market Viability — PresageIQ</span></div>
+          <div id="mkt-result-body" style="font-size:11px;color:var(--text3);">Complete Concept Setup first, then run analysis.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONSULT: 03 COMMUNITY INTEL -->
+    <div class="panel" id="panel-c-community">
+      <div class="panel-head">
+        <div class="panel-title">Community Intelligence</div>
+        <div class="panel-desc">What locals are actually saying about concepts like this — pulled from Reddit, reviews, and KC community sources.</div>
+      </div>
+      <div class="panel-body">
+        <div class="field-group">
+          <div class="field-group-title">Paste Additional Sources (Optional)</div>
+          <div class="field-row one">
+            <div class="field"><label>Reviews, social posts, or community content about similar businesses</label>
+              <textarea class="fta" id="cc-community-paste" placeholder="Paste Yelp reviews of similar businesses in KC, Reddit threads about the neighborhood, competitor Google reviews..." style="min-height:100px;"></textarea>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="run-btn" id="comm-run-btn" onclick="runCommunityAnalysis()">◎ Analyze Community Signals</button>
+          <button class="run-btn teal" id="comm-reddit-btn" onclick="runConceptReddit()">◎ Pull Live Reddit Signals</button>
+        </div>
+        <div class="ai-result" id="comm-result">
+          <div class="ai-result-header"><span class="ai-result-label">◎ Community Intelligence — PresageIQ</span></div>
+          <div id="comm-result-body"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONSULT: 04 FINANCIAL PROJECTION -->
+    <div class="panel" id="panel-c-financials">
+      <div class="panel-head">
+        <div class="panel-title">Financial Projection</div>
+        <div class="panel-desc">Startup cost range, monthly revenue estimate, break-even timeline, and payback period based on concept and neighborhood data.</div>
+      </div>
+      <div class="panel-body">
+        <div class="field-group">
+          <div class="field-group-title">Additional Context</div>
+          <div class="field-row three">
+            <div class="field"><label>Est. Sq Footage</label><input class="fi" id="cf-sqft" placeholder="e.g. 1,200 sq ft"/></div>
+            <div class="field"><label>Seats / Capacity</label><input class="fi" id="cf-seats" placeholder="e.g. 45 seats"/></div>
+            <div class="field"><label>Operating Hours / Week</label><input class="fi" id="cf-hours" placeholder="e.g. 60 hrs/week"/></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Known costs or commitments</label><textarea class="fta" id="cf-known" placeholder="Equipment quotes, lease discussions, licensing fees..." style="min-height:60px;"></textarea></div>
+            <div class="field"><label>Revenue assumptions</label><textarea class="fta" id="cf-revenue" placeholder="Any estimates they've done, comparable business research..." style="min-height:60px;"></textarea></div>
+          </div>
+        </div>
+        <button class="run-btn purple" id="fin-run-btn" onclick="runFinancialProjection()">◎ Generate Full Projection</button>
+        <div class="proj-grid" id="proj-cards" style="display:none;">
+          <div class="proj-card"><div class="proj-card-label">Startup Cost Range</div><div class="proj-card-value" id="proj-startup">—</div><div class="proj-card-sub">Estimated total capital needed</div></div>
+          <div class="proj-card"><div class="proj-card-label">Monthly Revenue Est.</div><div class="proj-card-value" id="proj-revenue">—</div><div class="proj-card-sub">At stabilized operations</div></div>
+          <div class="proj-card"><div class="proj-card-label">Break-Even Timeline</div><div class="proj-card-value" id="proj-breakeven">—</div><div class="proj-card-sub">Months to cover operating costs</div></div>
+        </div>
+        <div class="ai-result" id="fin-result">
+          <div class="ai-result-header"><span class="ai-result-label">◎ Financial Projection — PresageIQ</span></div>
+          <div id="fin-result-body"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONSULT: 05 FUNDING PATHWAYS -->
+    <div class="panel" id="panel-c-funding">
+      <div class="panel-head">
+        <div class="panel-title">Funding Pathways</div>
+        <div class="panel-desc">Relevant funding sources, grants, and resources based on the client's profile — veteran status, KC location, business type, and capital gap.</div>
+      </div>
+      <div class="panel-body">
+        <button class="run-btn" id="fund-run-btn" onclick="runFundingAnalysis()">◎ Identify Funding Pathways</button>
+        <div class="ai-result" id="fund-result" style="margin-top:16px;">
+          <div class="ai-result-header"><span class="ai-result-label">◎ Funding Pathways — PresageIQ</span></div>
+          <div id="fund-result-body" style="font-size:11px;color:var(--text3);">Complete Concept Setup with client background and investment range, then run analysis.</div>
+        </div>
+        <div style="margin-top:16px;">
+          <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);">KC Resources Always Worth Mentioning</div>
+          <div class="funding-item"><div class="funding-name">UMKC Regnier Institute</div><div class="funding-desc">Entrepreneurship resources, pitch competitions, mentorship. Strong fit for UMKC-connected founders.</div><div class="funding-tags"><span class="ftag ftag-kc">KC</span><span class="ftag ftag-sb">Small Biz</span></div></div>
+          <div class="funding-item"><div class="funding-name">KC Small Business Administration (SBA)</div><div class="funding-desc">SBA 7(a) loans, microloans, and counseling. First stop for any small business seeking debt financing.</div><div class="funding-tags"><span class="ftag ftag-sb">Federal</span><span class="ftag ftag-kc">KC Office</span></div></div>
+          <div class="funding-item"><div class="funding-name">Missouri Veteran Commission — SELF Program</div><div class="funding-desc">Self-Employment for Low-Income Individuals — specific veteran track with business support services.</div><div class="funding-tags"><span class="ftag ftag-vet">Veteran</span><span class="ftag ftag-sb">Missouri</span></div></div>
+          <div class="funding-item"><div class="funding-name">Kauffman Foundation — KC</div><div class="funding-desc">KC-based entrepreneurship foundation with grants, programs, and ecosystem connections. Headquartered here.</div><div class="funding-tags"><span class="ftag ftag-kc">KC</span><span class="ftag ftag-sb">Grant</span></div></div>
+          <div class="funding-item"><div class="funding-name">VA Vocational Rehabilitation (Chapter 31)</div><div class="funding-desc">For service-connected disabled veterans — can cover business startup costs as part of self-employment track.</div><div class="funding-tags"><span class="ftag ftag-vet">Veteran</span><span class="ftag ftag-vet">Federal</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONSULT: 06 CONSULT REPORT -->
+    <div class="panel" id="panel-c-report">
+      <div class="panel-head">
+        <div class="panel-title">Presage Consult Report</div>
+        <div class="panel-desc">Full pre-launch intelligence report — viability verdict, financial projection, funding pathways, and recommended next steps.</div>
+      </div>
+      <div class="panel-body">
+        <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+          <button class="run-btn purple" id="crpt-run-btn" onclick="generateConsultReport()">◎ Generate Consult Report</button>
+          <button class="run-btn" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2);" onclick="copyConsultReport()">Copy to Clipboard</button>
+        </div>
+        <div id="consult-report-output">
+          <div style="font-size:11px;color:var(--text3);padding:20px 0;line-height:1.8;">Complete the concept modules first, then generate the full report.</div>
         </div>
       </div>
     </div>
@@ -797,6 +1054,264 @@ function buildBrief() { showPanel('brief'); generateBrief(); }
 // =============================================
 function escHtml(str){if(!str)return'';return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function timeAgo(utc){const s=Math.floor(Date.now()/1000)-utc;if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
+
+// =============================================
+// MODE SWITCHING
+// =============================================
+let currentMode = 'audit';
+
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('mode-audit').classList.toggle('active', mode === 'audit');
+  document.getElementById('mode-consult').classList.toggle('active', mode === 'consult');
+  document.getElementById('audit-nav').style.display = mode === 'audit' ? 'block' : 'none';
+  document.getElementById('consult-nav').style.display = mode === 'consult' ? 'block' : 'none';
+  if(mode === 'audit') showPanel('setup');
+  if(mode === 'consult') showPanel('c-concept');
+}
+
+// =============================================
+// CONSULT MODULE TRACKING
+// =============================================
+const consultDone = { 'c-concept':false, 'c-market':false, 'c-community':false, 'c-financials':false, 'c-funding':false, 'c-report':false };
+
+function markConsultDone(id) {
+  consultDone[id] = true;
+  const el = document.getElementById('nav-'+id);
+  if(el) el.classList.add('done');
+}
+
+// =============================================
+// CONSULT CONTEXT
+// =============================================
+function getConsultContext() {
+  return `Client: ${document.getElementById('cc-client').value || 'Unknown'}
+Background: ${document.getElementById('cc-background').value || 'Unknown'}
+Investment Range: ${document.getElementById('cc-investment').value || 'Unknown'}
+Business Type: ${document.getElementById('cc-type').value || 'Unknown'}
+Target Neighborhood: ${document.getElementById('cc-nbhd').value || 'Unknown'}, Kansas City
+Target Avg Transaction: ${document.getElementById('cc-check').value || 'Unknown'}
+Concept: ${document.getElementById('cc-concept').value || 'Not provided'}
+Why this neighborhood: ${document.getElementById('cc-why').value || 'Not provided'}
+Biggest concern: ${document.getElementById('cc-concern').value || 'Not provided'}`;
+}
+
+// =============================================
+// CONSULT: MARKET ANALYSIS
+// =============================================
+async function runMarketAnalysis() {
+  const btn = document.getElementById('mkt-run-btn');
+  const body = document.getElementById('mkt-result-body');
+  btn.disabled = true;
+  body.innerHTML = '<div class="typing-row"><div class="dot-t"></div><div class="dot-t"></div><div class="dot-t"></div></div>';
+
+  const concept = document.getElementById('cc-concept').value.trim();
+  const nbhd = document.getElementById('cc-nbhd').value;
+  if(!concept || !nbhd) {
+    body.innerHTML = '<span style="color:var(--warn);">Complete Concept Setup first — need at least the concept description and neighborhood.</span>';
+    btn.disabled = false; return;
+  }
+
+  try {
+    const data = await callAI({
+      model:'claude-sonnet-4-6', max_tokens:900,
+      system:`You are PresageIQ conducting a pre-launch market viability analysis for a Kansas City business concept. Be direct and honest — a weak market signal is valuable information. Reference neighborhood-specific data where possible. Use ** for bold headers.`,
+      messages:[{role:'user', content:`${getConsultContext()}\n\nAnalyze market viability for this concept. Structure:\n\n**FIT SCORE: X/10** — one sentence verdict\n\n**WHAT THE MARKET SAYS IS WORKING FOR THIS** — demand signals, demographic alignment, neighborhood opportunity\n\n**WHAT WORKS AGAINST IT** — saturation, demographic mismatch, timing, or structural concerns\n\n**NEIGHBORHOOD VERDICT** — is ${nbhd} the right location? If not, name a better KC neighborhood and why\n\n**THE ONE THING THAT DETERMINES SUCCESS HERE** — the single factor that makes or breaks this concept in this market\n\nBe specific to Kansas City. Reference real neighborhood characteristics.`}]
+    });
+    const text = data.content?.[0]?.text || '';
+    body.innerHTML = text.replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--text);">$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+    markConsultDone('c-market');
+  } catch(e) { body.innerHTML = '<span style="color:var(--danger);">Analysis failed — try again.</span>'; }
+  btn.disabled = false;
+}
+
+// =============================================
+// CONSULT: REDDIT CONCEPT SCAN
+// =============================================
+async function runConceptReddit() {
+  const nbhd = document.getElementById('cc-nbhd').value;
+  const type = document.getElementById('cc-type').value;
+  const concept = document.getElementById('cc-concept').value;
+  const targetEl = document.getElementById('comm-result-body') || document.getElementById('mkt-result-body');
+  const result = document.getElementById('comm-result');
+  if(result) result.classList.add('visible');
+
+  if(!nbhd && !type) { if(targetEl) targetEl.innerHTML='<span style="color:var(--warn);">Enter neighborhood and business type in Concept Setup first.</span>'; return; }
+
+  const searchTerm = `${nbhd} ${type.split('—')[0].trim()}`.trim();
+  if(targetEl) targetEl.innerHTML = `<div style="font-size:11px;color:var(--text3);">Scanning Reddit for: "${searchTerm}"...</div>`;
+
+  const subs = ['kansascity','KCFoodScene','kansascitylocal'];
+  let allPosts = [];
+  for(const sub of subs) {
+    try {
+      const r = await fetch(`https://www.reddit.com/r/${sub}/search.json?q=${encodeURIComponent(searchTerm)}&restrict_sr=1&sort=relevance&t=year&limit=8`,{headers:{'Accept':'application/json'}});
+      if(!r.ok) continue;
+      const d = await r.json();
+      (d?.data?.children||[]).forEach(c => allPosts.push({...c.data,sub}));
+    } catch(e){}
+  }
+  const seen = new Set();
+  allPosts = allPosts.filter(p=>{if(seen.has(p.id))return false;seen.add(p.id);return true;}).sort((a,b)=>b.score-a.score).slice(0,8);
+
+  if(!targetEl) return;
+  if(allPosts.length === 0) {
+    targetEl.innerHTML = `<span style="color:var(--text3);font-size:11px;">No Reddit posts found for "${searchTerm}". Try searching manually on <a href="https://reddit.com/r/KCFoodScene" target="_blank" style="color:var(--teal);">r/KCFoodScene</a>.</span>`;
+    return;
+  }
+  targetEl.innerHTML = `<div style="font-size:10px;color:var(--text3);margin-bottom:10px;">${allPosts.length} community posts found for "${searchTerm}"</div>` +
+    allPosts.map(p=>{
+      const age = timeAgo(p.created_utc);
+      const snippet = p.selftext ? p.selftext.substring(0,160)+'...' : '';
+      return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:9px 11px;margin-bottom:6px;cursor:pointer;" onclick="window.open('https://reddit.com${p.permalink}','_blank')">
+        <div style="font-size:11px;color:var(--text);margin-bottom:4px;">${escHtml(p.title)}</div>
+        ${snippet?`<div style="font-size:10px;color:var(--text3);font-style:italic;margin-bottom:4px;">${escHtml(snippet)}</div>`:''}
+        <div style="font-size:9px;color:var(--text3);display:flex;gap:8px;"><span style="color:#ff4500;">r/${p.sub}</span><span>↑${p.score}</span><span>${age}</span><span style="margin-left:auto;color:var(--teal);">↗ Open</span></div>
+      </div>`;
+    }).join('');
+  markConsultDone('c-community');
+}
+
+// =============================================
+// CONSULT: COMMUNITY ANALYSIS
+// =============================================
+async function runCommunityAnalysis() {
+  const btn = document.getElementById('comm-run-btn');
+  const result = document.getElementById('comm-result');
+  const body = document.getElementById('comm-result-body');
+  btn.disabled = true; result.classList.add('visible');
+  body.innerHTML = '<div class="typing-row"><div class="dot-t"></div><div class="dot-t"></div><div class="dot-t"></div></div>';
+
+  const pasted = document.getElementById('cc-community-paste').value;
+  if(!pasted.trim()) {
+    body.innerHTML = '<span style="color:var(--warn);">Paste community content above, or use the Reddit scan button to pull live posts.</span>';
+    btn.disabled = false; return;
+  }
+
+  try {
+    const data = await callAI({
+      model:'claude-sonnet-4-6', max_tokens:700,
+      system:`You are PresageIQ extracting community intelligence relevant to a pre-launch business concept in Kansas City. Focus on signals that validate or challenge the concept.`,
+      messages:[{role:'user',content:`${getConsultContext()}\n\nCOMMUNITY CONTENT:\n${pasted}\n\nExtract intelligence relevant to this concept. Structure:\n**DEMAND SIGNALS** — evidence locals want something like this\n**CAUTION SIGNALS** — evidence of market resistance, oversaturation, or failed precedents\n**DIRECT QUOTES OF NOTE** — 2-3 specific quotes that capture community sentiment most clearly\n**COMMUNITY VERDICT** — one sentence on what the community data says about this concept's viability`}]
+    });
+    const text = data.content?.[0]?.text||'';
+    body.innerHTML = text.replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--text);">$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+    markConsultDone('c-community');
+  } catch(e) { body.innerHTML='<span style="color:var(--danger);">Analysis failed — try again.</span>'; }
+  btn.disabled = false;
+}
+
+// =============================================
+// CONSULT: FINANCIAL PROJECTION
+// =============================================
+async function runFinancialProjection() {
+  const btn = document.getElementById('fin-run-btn');
+  const result = document.getElementById('fin-result');
+  const body = document.getElementById('fin-result-body');
+  btn.disabled = true; result.classList.add('visible');
+  body.innerHTML = '<div class="typing-row"><div class="dot-t"></div><div class="dot-t"></div><div class="dot-t"></div></div>';
+
+  const extraContext = `Square footage: ${document.getElementById('cf-sqft').value||'Unknown'}
+Seats/Capacity: ${document.getElementById('cf-seats').value||'Unknown'}
+Operating hours/week: ${document.getElementById('cf-hours').value||'Unknown'}
+Known costs: ${document.getElementById('cf-known').value||'None provided'}
+Revenue assumptions: ${document.getElementById('cf-revenue').value||'None provided'}`;
+
+  try {
+    const data = await callAI({
+      model:'claude-sonnet-4-6', max_tokens:1000,
+      system:`You are PresageIQ generating a financial projection for a pre-launch KC business concept. Be realistic — not pessimistic, not optimistic. Use industry benchmarks for the business type and KC market conditions. Clearly state all assumptions. This is a planning tool, not a guarantee. Use ** for bold headers.
+
+IMPORTANT: At the end of your response, output exactly this format on separate lines:
+STARTUP_LOW: $XXX,XXX
+STARTUP_HIGH: $XXX,XXX
+REVENUE_EST: $XX,XXX/mo
+BREAKEVEN: XX months`,
+      messages:[{role:'user',content:`${getConsultContext()}\n\n${extraContext}\n\nGenerate a full financial projection. Structure:\n\n**STARTUP COST BREAKDOWN**\nItemized estimate of startup costs — buildout/renovation, equipment, inventory, licenses/permits, deposits, working capital reserve, marketing. Give a realistic range (low/high).\n\n**MONTHLY REVENUE PROJECTION**\nBased on capacity, avg check, realistic covers/transactions per day, and KC market conditions. Show the math.\n\n**MONTHLY OPERATING COSTS**\nRent estimate for neighborhood, labor, COGS, utilities, insurance, misc. Give realistic ranges.\n\n**BREAK-EVEN ANALYSIS**\nMonths to cover monthly operating costs. Months to recoup total startup investment (payback period).\n\n**KEY ASSUMPTIONS**\nList the 4-5 most important assumptions driving these numbers.\n\n**FINANCIAL RISK FLAGS**\nThe 2-3 financial scenarios that could break this projection.`}]
+    });
+    let text = data.content?.[0]?.text||'';
+
+    // Extract projection cards
+    const startupLow = text.match(/STARTUP_LOW:\s*\$?([\d,]+)/)?.[1];
+    const startupHigh = text.match(/STARTUP_HIGH:\s*\$?([\d,]+)/)?.[1];
+    const revenueEst = text.match(/REVENUE_EST:\s*\$?([\d,]+\/mo)/)?.[1];
+    const breakeven = text.match(/BREAKEVEN:\s*(\d+\s*months?)/i)?.[1];
+
+    if(startupLow && startupHigh) {
+      document.getElementById('proj-startup').textContent = `$${startupLow}–$${startupHigh}`;
+      document.getElementById('proj-revenue').textContent = revenueEst ? `$${revenueEst}` : '—';
+      document.getElementById('proj-breakeven').textContent = breakeven || '—';
+      document.getElementById('proj-cards').style.display = 'grid';
+    }
+
+    // Clean extraction lines from display
+    text = text.replace(/STARTUP_LOW:[^\n]*/g,'').replace(/STARTUP_HIGH:[^\n]*/g,'').replace(/REVENUE_EST:[^\n]*/g,'').replace(/BREAKEVEN:[^\n]*/g,'').trim();
+    body.innerHTML = text.replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--text);">$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+    markConsultDone('c-financials');
+  } catch(e) { body.innerHTML='<span style="color:var(--danger);">Projection failed — try again.</span>'; }
+  btn.disabled = false;
+}
+
+// =============================================
+// CONSULT: FUNDING PATHWAYS
+// =============================================
+async function runFundingAnalysis() {
+  const btn = document.getElementById('fund-run-btn');
+  const result = document.getElementById('fund-result');
+  const body = document.getElementById('fund-result-body');
+  btn.disabled = true; result.classList.add('visible');
+  body.innerHTML = '<div class="typing-row"><div class="dot-t"></div><div class="dot-t"></div><div class="dot-t"></div></div>';
+
+  try {
+    const data = await callAI({
+      model:'claude-sonnet-4-6', max_tokens:800,
+      system:`You are PresageIQ identifying funding pathways for a pre-launch KC business. Focus on realistic, accessible options based on the client's profile. Prioritize by likelihood of success. Include veteran-specific resources if applicable. Be specific — name actual programs, not just categories.`,
+      messages:[{role:'user',content:`${getConsultContext()}\n\nIdentify the most relevant funding pathways for this client. Structure:\n\n**BEST FIT — PURSUE FIRST** — the 2-3 most realistic funding sources given their profile, investment range, and business type. Name specific programs.\n\n**VETERAN-SPECIFIC RESOURCES** — if applicable, specific VA, SBA veteran, or Missouri veteran programs they should explore immediately.\n\n**KC-SPECIFIC OPPORTUNITIES** — local KC grants, CDFI loans, neighborhood development funds, or programs specific to their target area.\n\n**REALISTIC FUNDING STACK** — how they might combine multiple sources to reach their startup cost target.\n\n**FIRST THREE CALLS TO MAKE** — the specific organizations to contact this week, in priority order.`}]
+    });
+    const text = data.content?.[0]?.text||'';
+    body.innerHTML = text.replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--text);">$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+    markConsultDone('c-funding');
+  } catch(e) { body.innerHTML='<span style="color:var(--danger);">Analysis failed — try again.</span>'; }
+  btn.disabled = false;
+}
+
+// =============================================
+// CONSULT: GENERATE REPORT
+// =============================================
+async function generateConsultReport() {
+  const btn = document.getElementById('crpt-run-btn');
+  const output = document.getElementById('consult-report-output');
+  btn.disabled = true;
+  output.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:20px 0;display:flex;align-items:center;gap:8px;"><div class="typing-row"><div class="dot-t"></div><div class="dot-t"></div><div class="dot-t"></div></div> Generating Presage Consult Report...</div>';
+
+  const mktFindings = document.getElementById('mkt-result-body').innerText;
+  const commFindings = document.getElementById('comm-result-body').innerText;
+  const finFindings = document.getElementById('fin-result-body').innerText;
+  const fundFindings = document.getElementById('fund-result-body').innerText;
+  const startupRange = document.getElementById('proj-startup').textContent;
+  const revenueEst = document.getElementById('proj-revenue').textContent;
+  const breakeven = document.getElementById('proj-breakeven').textContent;
+
+  try {
+    const data = await callAI({
+      model:'claude-sonnet-4-6', max_tokens:1600,
+      system:`You are PresageIQ writing a Presage Consult Report — a professional pre-launch intelligence report delivered to a client after a full concept analysis session. Write in a clear, authoritative, professional tone. This document will be shared with the client and potentially with investors or lenders. Use ** for bold headers.`,
+      messages:[{role:'user',content:`CLIENT CONTEXT:\n${getConsultContext()}\n\nMARKET VIABILITY FINDINGS:\n${mktFindings||'Not completed'}\n\nCOMMUNITY INTELLIGENCE:\n${commFindings||'Not completed'}\n\nFINANCIAL PROJECTION:\n${finFindings||'Not completed'}\nStartup Range: ${startupRange} | Monthly Revenue Est: ${revenueEst} | Break-Even: ${breakeven}\n\nFUNDING PATHWAYS:\n${fundFindings||'Not completed'}\n\nWrite the Presage Consult Report. Structure:\n\n**PRESAGE CONSULT REPORT**\n**${document.getElementById('cc-concept').value.substring(0,60)||'Business Concept'} · ${document.getElementById('cc-nbhd').value||'Kansas City'} · Towns & Walley Intelligence**\n\n**EXECUTIVE SUMMARY** (3 sentences — viability verdict, biggest opportunity, most critical risk)\n\n**MARKET VIABILITY** (what the data says about this concept in this market)\n\n**WHAT THE COMMUNITY IS TELLING US** (key signals from locals)\n\n**FINANCIAL SNAPSHOT**\n— Startup Cost Range: ${startupRange}\n— Monthly Revenue Estimate: ${revenueEst}\n— Break-Even Timeline: ${breakeven}\n(1 paragraph interpreting what these numbers mean for this client)\n\n**FUNDING PATHWAYS** (top 3 most relevant for this client)\n\n**PRIORITY ACTION PLAN**\n— This Week\n— Next 30 Days\n— 60-90 Days\n\n**CLOSING ASSESSMENT** (honest, direct, encouraging — acknowledge the risk, affirm the opportunity if it's real, be straight if it's not)\n\nThis is a $500 deliverable. Write accordingly.`}]
+    });
+    const text = data.content?.[0]?.text||'';
+    output.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:24px;font-size:12px;line-height:1.85;color:var(--text2);">${
+      text.replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--text);font-size:13px;">$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>')
+    }</div>`;
+    markConsultDone('c-report');
+  } catch(e) { output.innerHTML='<span style="color:var(--danger);">Report generation failed — complete the analysis modules first.</span>'; }
+  btn.disabled = false;
+}
+
+function copyConsultReport() {
+  const text = document.getElementById('consult-report-output').innerText;
+  if(!text || text.includes('Complete the concept modules')) { alert('Generate the report first.'); return; }
+  navigator.clipboard.writeText(text).then(()=>alert('Report copied to clipboard.'));
+}
 
 // Init
 renderMenuItems();
